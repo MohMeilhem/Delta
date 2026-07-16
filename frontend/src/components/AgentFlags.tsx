@@ -94,8 +94,11 @@ export default function AgentFlags({
           <span className="rounded-full bg-current/15 px-1.5 py-px text-[10px]">
             {f.severity === 'high' ? t.critical : t.medium}
           </span>
-          {/* explanation + cause on hover (interactive: holds the exclude button) */}
-          <div className="absolute end-0 top-full z-20 mt-2 hidden w-80 rounded-[10px] border border-line bg-surface p-3 text-[11px] leading-5 text-ink shadow-xl group-hover:block">
+          {/* explanation + cause on hover (interactive: holds the exclude
+              button). The gap is padding, not margin — the pointer must never
+              cross a dead zone on its way to the button, or the card closes. */}
+          <div className="absolute end-0 top-full z-20 hidden w-80 pt-2 group-hover:block">
+          <div className="rounded-[10px] border border-line bg-surface p-3 text-[11px] leading-5 text-ink shadow-xl">
             {lang === 'ar' ? f.explanation_ar : explainEn(f)}
 
             {(f.cause_ar || f.cause_en) && (
@@ -134,6 +137,7 @@ export default function AgentFlags({
                 {t.excludeQuarter} — {f.suggested_exclusion}
               </button>
             )}
+          </div>
           </div>
         </motion.div>
       ))}

@@ -158,8 +158,10 @@ export default function CompanyPage() {
         <div className="orb orb-purple" style={{ opacity: 0.3 }} />
       </div>
 
-      {/* ---- header: open ground above the deck ---- */}
-      <header className="relative z-10 mx-auto max-w-7xl px-6 pb-7">
+      {/* ---- header: open ground above the deck. z-30: the anomaly-flag
+           hover cards drop down over the valuation zone (z-10) and must
+           stay clickable above it ---- */}
+      <header className="relative z-30 mx-auto max-w-7xl px-6 pb-7">
         <nav className="mb-4 flex items-center gap-2 text-xs text-ink-faint">
           <Link to="/app" className="transition-colors hover:text-ink">
             {t.appLink}
