@@ -1,0 +1,22 @@
+{
+  "_comment": "Saudi macro context aligned to the seed financials quarters (2023Q3-2026Q2). brent_usd = quarterly average Brent crude (USD/bbl); sama_repo_pct = SAMA repo policy rate at quarter end (%, tracks the Fed via the USD peg). Values through 2025 track actual history; 2026 quarters are demo projections consistent with the synthetic seed narrative.",
+  "context_en": [
+    "SAR is pegged to USD at 3.75, so SAMA policy rates track the US Fed.",
+    "Oil transmission: Brent -> government revenue and spending -> banking-system liquidity, credit growth and non-oil activity (Vision 2030 / PIF projects). Direct channel for Energy (Aramco top line) and Materials (petrochemical feedstock/product spreads).",
+    "Zakat (2.5% of zakat base) applies to Saudi-owned listed companies instead of income tax."
+  ],
+  "series": [
+    { "quarter": "2023Q3", "brent_usd": 86.7, "sama_repo_pct": 6.0 },
+    { "quarter": "2023Q4", "brent_usd": 84.3, "sama_repo_pct": 6.0 },
+    { "quarter": "2024Q1", "brent_usd": 81.8, "sama_repo_pct": 6.0 },
+    { "quarter": "2024Q2", "brent_usd": 85.0, "sama_repo_pct": 6.0 },
+    { "quarter": "2024Q3", "brent_usd": 78.7, "sama_repo_pct": 5.5 },
+    { "quarter": "2024Q4", "brent_usd": 74.0, "sama_repo_pct": 5.0 },
+    { "quarter": "2025Q1", "brent_usd": 75.1, "sama_repo_pct": 5.0 },
+    { "quarter": "2025Q2", "brent_usd": 67.9, "sama_repo_pct": 5.0 },
+    { "quarter": "2025Q3", "brent_usd": 68.1, "sama_repo_pct": 4.75 },
+    { "quarter": "2025Q4", "brent_usd": 65.4, "sama_repo_pct": 4.5 },
+    { "quarter": "2026Q1", "brent_usd": 68.2, "sama_repo_pct": 4.25 },
+    { "quarter": "2026Q2", "brent_usd": 72.5, "sama_repo_pct": 4.25 }
+  ]
+}
