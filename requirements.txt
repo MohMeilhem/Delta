@@ -1,0 +1,8 @@
+# Vercel serverless deps — sklearn intentionally omitted (valuation.py has a
+# closed-form numpy fallback) to stay under the 250 MB function size limit.
+# Local dev uses backend/requirements.txt instead.
+fastapi
+pydantic
+anthropic
+httpx
+numpy

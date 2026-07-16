@@ -9,3 +9,5 @@ __pycache__/
 .claude/scheduled_tasks.lock
 data/news_cache.json
 data/summary_cache.json
+
+.vercel
