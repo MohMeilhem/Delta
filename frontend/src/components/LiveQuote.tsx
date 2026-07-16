@@ -18,9 +18,12 @@ export default function LiveQuote({ ticker }: { ticker: string }) {
   useEffect(() => {
     let alive = true
     setQuote(null)
-    api.live(ticker).then((q) => alive && setQuote(q)).catch(() => {})
+    const poll = () => api.live(ticker).then((q) => alive && setQuote(q)).catch(() => {})
+    poll()
+    const id = setInterval(poll, 5000)
     return () => {
       alive = false
+      clearInterval(id)
     }
   }, [ticker])
 
