@@ -1,0 +1,45 @@
+<!-- @dsCard group="Components" name="Controls — buttons, chips, badges, slider" -->
+<meta charset="utf-8">
+<style>
+  body { margin:0; padding:28px; background:oklch(0.135 0.014 180); color:oklch(0.95 0.006 170);
+         font:13px/1.6 'IBM Plex Sans Arabic', system-ui, sans-serif; direction:rtl; }
+  .row { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-bottom:20px; }
+  .label { width:100%; font:600 10px/1 'IBM Plex Mono', monospace; letter-spacing:.14em; text-transform:uppercase;
+           color:oklch(0.78 0.145 163); direction:ltr; text-align:left; margin-bottom:2px; }
+  .btn { border-radius:8px; border:none; cursor:pointer; font:600 13px 'IBM Plex Sans Arabic', sans-serif; }
+  .btn-primary { background:oklch(0.78 0.145 163); color:oklch(0.135 0.014 180); padding:9px 18px; }
+  .btn-outline { background:transparent; color:oklch(0.75 0.015 175); border:1px solid oklch(0.265 0.016 180); padding:8px 14px; font-size:12px; }
+  .pill { border-radius:999px; padding:3px 10px; font-size:11px; border:1px solid; }
+  .pill-islamic { color:oklch(0.78 0.145 163); border-color:oklch(0.42 0.085 163); }
+  .pill-sukuk { color:oklch(0.75 0.015 175); border-color:oklch(0.265 0.016 180); }
+  .flag { display:inline-flex; align-items:center; gap:7px; border-radius:999px; padding:6px 14px; font-size:12px; border:1px solid; }
+  .flag-high { color:oklch(0.69 0.17 25); border-color:oklch(0.69 0.17 25 / .5); background:oklch(0.69 0.17 25 / .1); }
+  .flag-med  { color:oklch(0.78 0.14 65); border-color:oklch(0.78 0.14 65 / .5); background:oklch(0.78 0.14 65 / .1); }
+  .dot { width:6px; height:6px; border-radius:50%; background:currentColor; }
+  .live { display:inline-flex; align-items:center; gap:5px; border-radius:999px; padding:3px 10px; font:500 11px 'IBM Plex Mono', monospace;
+          color:oklch(0.78 0.145 163); border:1px solid oklch(0.78 0.145 163 / .2); background:oklch(0.78 0.145 163 / .08); }
+  .num { font-family:'IBM Plex Mono', monospace; direction:ltr; unicode-bidi:isolate; }
+  .slider-demo { width:280px; }
+  .slider-head { display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px; }
+  .slider-head .val { color:oklch(0.83 0.13 85); font-weight:500; }
+  input[type=range] { -webkit-appearance:none; width:100%; height:3px; border-radius:999px; background:oklch(0.34 0.017 180); direction:ltr; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:15px; height:15px; border-radius:50%;
+    background:oklch(0.83 0.13 85); border:2px solid oklch(0.135 0.014 180); box-shadow:0 0 0 1px oklch(0.48 0.085 85); }
+</style>
+<div class="label">Buttons</div>
+<div class="row"><button class="btn btn-primary">توليد السيناريوهات ✦</button><button class="btn btn-outline">إعادة للأساس ↺</button></div>
+
+<div class="label">Identity chips</div>
+<div class="row"><span class="pill pill-islamic">مصرف إسلامي</span><span class="pill pill-sukuk">صكوك قائمة</span><span class="live"><span class="dot"></span> مباشر · تداول</span></div>
+
+<div class="label">Monitoring-agent flags (hover reveals cause + exclude action)</div>
+<div class="row">
+  <span class="flag flag-high"><span class="dot"></span> هامش صافي الربح <span class="num">z -32.4</span> حرج</span>
+  <span class="flag flag-med"><span class="dot"></span> التدفق النقدي الحر <span class="num">z -3.4</span> متوسط</span>
+</div>
+
+<div class="label">Assumption slider — amber thumb: the analyst's hand</div>
+<div class="slider-demo">
+  <div class="slider-head"><span>نمو الإيرادات السنوي</span><span class="val num">+3.1%</span></div>
+  <input type="range" min="0" max="100" value="38">
+</div>

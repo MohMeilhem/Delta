@@ -1,0 +1,27 @@
+<!-- @dsCard group="Surfaces" name="Surfaces — panel, raised, screen, zone" -->
+<meta charset="utf-8">
+<style>
+  body { margin:0; padding:28px; background:oklch(0.135 0.014 180); color:oklch(0.95 0.006 170);
+         font:13px/1.6 'IBM Plex Sans Arabic', system-ui, sans-serif; direction:rtl; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .cap { font:600 10px/1 'IBM Plex Mono', monospace; letter-spacing:.14em; text-transform:uppercase;
+         color:oklch(0.78 0.145 163); direction:ltr; text-align:left; margin-bottom:8px; }
+  .box { padding:18px; min-height:70px; font-size:12px; color:oklch(0.75 0.015 175); }
+  .panel { background:oklch(0.17 0.014 180); border:1px solid oklch(0.265 0.016 180); border-radius:12px; }
+  .panel-raised { background:linear-gradient(to bottom, oklch(0.195 0.015 180), oklch(0.17 0.014 180) 45%);
+                  border:1px solid oklch(0.265 0.016 180); border-top-color:oklch(0.34 0.017 180); border-radius:12px; }
+  .screen { background:radial-gradient(120% 90% at 50% 0%, oklch(0.145 0.016 182), oklch(0.115 0.014 182) 70%);
+            border:1px solid oklch(0.23 0.016 180); border-radius:10px;
+            box-shadow:inset 0 1px 8px oklch(0 0 0 / .35), inset 0 0 0 1px oklch(1 0 0 / .015); }
+  .zone { grid-column:1 / -1; border-block:1px solid oklch(0.265 0.016 180);
+          background:linear-gradient(to bottom, oklch(0.185 0.015 180), oklch(0.17 0.014 180) 120px);
+          border-radius:0; padding:18px; }
+  .note { grid-column:1 / -1; font-size:11px; color:oklch(0.56 0.015 175); }
+</style>
+<div class="grid">
+  <div><div class="cap">panel — 12px radius</div><div class="box panel">بطاقة المحتوى الاعتيادية</div></div>
+  <div><div class="cap">panel-raised — lit top hairline</div><div class="box panel-raised">machined metal under a lamp</div></div>
+  <div><div class="cap">screen — the inset instrument</div><div class="box screen">تعيش عليه الرسوم البيانية</div></div>
+  <div><div class="cap">zone — full-bleed tonal band</div><div class="box zone" style="grid-column:auto">يجمع قسماً كاملاً بلون السطح بدل إحاطته بإطار</div></div>
+  <p class="note">Radius system (locked): panels 12px · controls 8px · chips pill. Zones are square-cornered and edge-to-edge — the page alternates bg / zone / bg for rhythm.</p>
+</div>

@@ -114,7 +114,7 @@ export default function DeltaChart({
     >
       {/* live terminal-value readout: this is what the terminal-growth lever moves */}
       {metric === 'net_income' && pvTerminal != null && (
-        <div className="absolute left-16 top-4 z-10 flex items-baseline gap-1.5 text-[10px] text-ink-faint">
+        <div className="absolute left-16 top-3.5 z-10 flex items-baseline gap-1.5 rounded-md border border-line/60 bg-surface/75 px-2 py-1 text-[10px] text-ink-faint backdrop-blur-sm">
           <span>{t.pvTerminal}</span>
           <NumberTicker value={pvTerminal} format={fmtMillions} className="text-[11px] text-analyst" />
         </div>
@@ -189,6 +189,9 @@ export default function DeltaChart({
               yAxisId="pv"
               fill={cc.analyst}
               fillOpacity={0.22}
+              stroke={cc.analyst}
+              strokeOpacity={0.4}
+              strokeWidth={1}
               radius={[2, 2, 0, 0]}
               isAnimationActive
               animationDuration={220}

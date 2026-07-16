@@ -47,8 +47,10 @@ export function fmtMillions(v: number): string {
 }
 
 export function fmtPct(v: number, signed = false): string {
-  const s = NF1[LANG].format(Math.abs(v))
-  const sign = v > 0 ? (signed ? '+' : '') : v < 0 ? '-' : ''
+  // round to the displayed precision FIRST so "-0.04" never renders "-0.0%"
+  const rounded = Math.round(Math.abs(v) * 10) / 10
+  const s = NF1[LANG].format(rounded)
+  const sign = rounded === 0 ? '' : v > 0 ? (signed ? '+' : '') : '-'
   return `${sign}${s}${LANG === 'ar' ? '٪' : '%'}`
 }
 

@@ -1,0 +1,32 @@
+<!-- @dsCard group="Charts" name="Sensitivity heatmap — diverging with neutral anchor" -->
+<meta charset="utf-8">
+<style>
+  body { margin:0; padding:24px; background:oklch(0.135 0.014 180); color:oklch(0.95 0.006 170);
+         font:12px/1.6 'IBM Plex Sans Arabic', system-ui, sans-serif; }
+  table { border-collapse:separate; border-spacing:2px; width:100%; text-align:center;
+          font:11px 'IBM Plex Mono', monospace; }
+  th { font-weight:400; color:oklch(0.56 0.015 175); padding:6px; font-size:10px; }
+  td { border-radius:6px; padding:8px 6px; color:oklch(0.95 0.006 170); }
+  .base { outline:1px solid oklch(0.83 0.13 85); outline-offset:-1px; }
+  .hl { color:oklch(0.83 0.13 85); }
+  .legend { margin-top:10px; display:flex; justify-content:flex-end; align-items:center; gap:8px;
+            font:10px 'IBM Plex Mono', monospace; color:oklch(0.56 0.015 175); }
+  .ramp { position:relative; width:110px; height:6px; border-radius:999px;
+          background:linear-gradient(to right, oklch(0.69 0.17 25 / .4), oklch(0.21 0.015 180), oklch(0.78 0.145 163 / .4)); }
+  .ramp i { position:absolute; left:50%; top:50%; width:1px; height:10px; transform:translate(-50%,-50%); background:oklch(0.56 0.015 175); }
+  .note { margin-top:14px; font-size:11px; color:oklch(0.56 0.015 175); max-width:64ch; direction:rtl; }
+</style>
+<table>
+  <tr><th>growth ↓ / discount →</th><th>8.0%</th><th class="hl">9.0%</th><th>10.0%</th><th>11.0%</th><th>12.0%</th></tr>
+  <tr><th>-0.9%</th>
+    <td style="background:oklch(0.78 0.145 163 / .17)">20.57</td><td style="background:transparent">17.22</td>
+    <td style="background:oklch(0.69 0.17 25 / .10)">14.83</td><td style="background:oklch(0.69 0.17 25 / .17)">13.03</td><td style="background:oklch(0.69 0.17 25 / .23)">11.64</td></tr>
+  <tr><th class="hl">+3.1%</th>
+    <td style="background:oklch(0.78 0.145 163 / .21)">22.19</td><td style="background:oklch(0.78 0.145 163 / .07)">18.56</td>
+    <td class="base" style="background:transparent">15.98</td><td style="background:oklch(0.69 0.17 25 / .13)">14.03</td><td style="background:oklch(0.69 0.17 25 / .20)">12.52</td></tr>
+  <tr><th>+7.1%</th>
+    <td style="background:oklch(0.78 0.145 163 / .26)">23.87</td><td style="background:oklch(0.78 0.145 163 / .12)">19.96</td>
+    <td style="background:transparent">17.16</td><td style="background:oklch(0.69 0.17 25 / .10)">15.07</td><td style="background:oklch(0.69 0.17 25 / .17)">13.44</td></tr>
+</table>
+<div class="legend"><span>11.64</span><span class="ramp"><i></i></span><span>23.87</span><span style="color:oklch(0.75 0.015 175)">(السعر الحالي: 17.49)</span></div>
+<p class="note">Diverging fill anchored at the market price with a neutral band (±2%): green = above price, red = below. Tint alpha capped low — the numeral in each cell is the datum and the CVD secondary encoding; text always wears ink tokens, never series color. Current assumption cell outlined in analyst amber.</p>

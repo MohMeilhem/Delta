@@ -112,12 +112,17 @@ function SensitivityHeatmap({ ticker, assumptions }: { ticker: string; assumptio
   const lo = Math.min(...flat)
   const hi = Math.max(...flat)
   const price = data.current_price
-  // color: below price → red side, above → green side, scaled by distance
+  // Diverging fill anchored at the market price: green above, red below,
+  // with a NEUTRAL midpoint band (±2%) — a diverging ramp without a neutral
+  // middle misreads as two arbitrary categories. Tint alpha is capped low:
+  // the number in each cell is the datum (and the CVD secondary encoding);
+  // the fill only orients. Text stays in ink tokens, never series color.
   const cellColor = (v: number) => {
     const rel = (v - price) / price
+    if (Math.abs(rel) < 0.02) return 'transparent'
     const c = Math.min(Math.abs(rel) / 0.5, 1)
     const base = rel >= 0 ? cc.up : cc.down
-    return base.replace(')', ` / ${(0.08 + 0.3 * c).toFixed(3)})`)
+    return base.replace(')', ` / ${(0.06 + 0.22 * c).toFixed(3)})`)
   }
 
   return (
@@ -158,7 +163,7 @@ function SensitivityHeatmap({ ticker, assumptions }: { ticker: string; assumptio
                       initial={reduce ? false : { opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ duration: 0.3, delay: (i * 5 + j) * 0.015, ease: EASE }}
-                      className={`num rounded-md p-2 ${isBase ? 'ring-1 ring-analyst' : ''} ${v >= price ? 'text-accent' : 'text-negative'}`}
+                      className={`num rounded-md p-2 text-ink ${isBase ? 'ring-1 ring-analyst' : ''}`}
                       style={{ background: cellColor(v) }}
                     >
                       {fmt(v)}
@@ -172,8 +177,12 @@ function SensitivityHeatmap({ ticker, assumptions }: { ticker: string; assumptio
       </div>
       <div dir="ltr" className="mt-2 flex items-center justify-end gap-2 text-[10px] text-ink-faint">
         <span className="num">{fmt(lo)}</span>
-        <span className="h-1.5 w-24 rounded-full bg-gradient-to-r from-negative/50 via-surface-2 to-accent/50" />
+        <span className="relative h-1.5 w-28 rounded-full bg-gradient-to-r from-negative/40 via-surface-2 to-accent/40">
+          {/* neutral anchor: the current market price */}
+          <span className="absolute left-1/2 top-1/2 h-2.5 w-px -translate-x-1/2 -translate-y-1/2 bg-ink-faint" />
+        </span>
         <span className="num">{fmt(hi)}</span>
+        <span className="num text-ink-muted">({t.current}: {fmt(price)})</span>
       </div>
     </div>
   )

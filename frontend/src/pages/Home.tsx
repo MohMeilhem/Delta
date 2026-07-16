@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { CaretDown, CaretLeft, CaretRight } from '@phosphor-icons/react'
 import { api } from '../api'
 import type { Company, Sector } from '../api'
+import DeltaMotif from '../components/DeltaMotif'
 import { EASE, ErrorNote, SectorIcon, Skeleton } from '../components/ui'
 import { useLang } from '../i18n'
 
@@ -39,28 +40,20 @@ export default function Home() {
         <div className="orb orb-amber" style={{ opacity: 0.5 }} />
       </div>
 
-      {/* masthead */}
-      <header className="relative z-10 mb-12 flex flex-wrap items-end justify-between gap-6 border-b border-line pb-8">
+      {/* masthead: the thesis, drawn — history splits into the machine line
+          and the analyst's line; the shaded gap is the product */}
+      <header className="relative z-10 mb-12 grid items-end gap-x-12 gap-y-8 border-b border-line pb-8 lg:grid-cols-[1fr_minmax(300px,42%)]">
         <div className="max-w-xl">
           <h1 className="display hero-gradient-text text-5xl font-bold tracking-tight leading-[1.3]">
             {t.brand}
           </h1>
           <p className="mt-3 text-sm leading-7 text-ink-muted">{t.heroLine}</p>
+          <p className="mt-5 text-[11px] tracking-wide text-ink-faint">
+            <span className="num">33</span> {t.listedCompanies} · <span className="num">9</span>{' '}
+            {t.sectors} · <span className="num">12</span> {t.histQuarters}
+          </p>
         </div>
-        <dl className="flex gap-8 text-start">
-          {(
-            [
-              [33, t.listedCompanies],
-              [9, t.sectors],
-              [12, t.histQuarters],
-            ] as [number, string][]
-          ).map(([n, label]) => (
-            <div key={label} className="home-stat-pill">
-              <dt className="text-[11px] text-ink-faint">{label}</dt>
-              <dd className="num display mt-1 text-2xl font-semibold text-accent">{n}</dd>
-            </div>
-          ))}
-        </dl>
+        <DeltaMotif className="max-lg:hidden" />
       </header>
 
       {error && <ErrorNote retry={() => window.location.reload()} />}

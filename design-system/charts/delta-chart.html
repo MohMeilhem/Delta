@@ -1,0 +1,45 @@
+<!-- @dsCard group="Charts" name="Delta chart — history, baseline, analyst, PV bars" -->
+<meta charset="utf-8">
+<style>
+  body { margin:0; padding:24px; background:oklch(0.135 0.014 180); color:oklch(0.95 0.006 170);
+         font:12px/1.6 'IBM Plex Sans Arabic', system-ui, sans-serif; }
+  .screen { background:radial-gradient(120% 90% at 50% 0%, oklch(0.145 0.016 182), oklch(0.115 0.014 182) 70%);
+            border:1px solid oklch(0.23 0.016 180); border-radius:10px; padding:14px;
+            box-shadow:inset 0 1px 8px oklch(0 0 0 / .35); }
+  text { font:10px 'IBM Plex Mono', monospace; fill:oklch(0.56 0.015 175); }
+  .legend { margin-top:12px; display:flex; gap:20px; font-size:11px; color:oklch(0.75 0.015 175); direction:rtl; }
+  .legend span { display:flex; align-items:center; gap:6px; }
+</style>
+<div class="screen">
+  <svg viewBox="0 0 560 240" width="100%">
+    <g stroke="oklch(0.23 0.015 180)" stroke-dasharray="2 4">
+      <line x1="40" x2="548" y1="40" y2="40"/><line x1="40" x2="548" y1="90" y2="90"/>
+      <line x1="40" x2="548" y1="140" y2="140"/><line x1="40" x2="548" y1="190" y2="190"/>
+    </g>
+    <text x="8" y="43">450M</text><text x="8" y="93">300M</text><text x="8" y="143">150M</text><text x="20" y="193">0M</text>
+    <line x1="330" x2="330" y1="28" y2="212" stroke="oklch(0.56 0.015 175)" stroke-dasharray="4 4"/>
+    <text x="322" y="24" text-anchor="end">← التوقعات</text>
+    <!-- PV bars: bottom fifth, analyst amber w/ definition stroke -->
+    <g fill="oklch(0.83 0.13 85)" fill-opacity=".22" stroke="oklch(0.83 0.13 85)" stroke-opacity=".4">
+      <rect x="348" y="168" width="20" height="44" rx="2"/><rect x="382" y="163" width="20" height="49" rx="2"/>
+      <rect x="416" y="170" width="20" height="42" rx="2"/><rect x="450" y="173" width="20" height="39" rx="2"/>
+      <rect x="484" y="171" width="20" height="41" rx="2"/><rect x="518" y="175" width="20" height="37" rx="2"/>
+    </g>
+    <!-- delta band -->
+    <path d="M330 96 L380 84 L440 74 L548 60 L548 96 L440 98 L380 98 Z" fill="oklch(0.83 0.13 85)" opacity=".16"/>
+    <!-- actual -->
+    <path d="M40 88 L80 62 L120 76 L160 58 L200 70 L240 52 L280 78 L330 96" fill="none" stroke="oklch(0.95 0.006 170)" stroke-width="1.75"/>
+    <!-- baseline -->
+    <path d="M330 96 L380 98 L440 98 L548 96" fill="none" stroke="oklch(0.78 0.145 163)" stroke-width="2"/>
+    <!-- analyst -->
+    <path d="M330 96 L380 84 L440 74 L548 60" fill="none" stroke="oklch(0.83 0.13 85)" stroke-width="2" stroke-dasharray="6 4"/>
+    <text x="40" y="228">Q3 23</text><text x="150" y="228">Q3 24</text><text x="260" y="228">Q3 25</text><text x="370" y="228">Q1 27</text><text x="500" y="228">Q2 28</text>
+  </svg>
+</div>
+<div class="legend">
+  <span><span style="width:16px;height:2px;background:oklch(0.95 0.006 170)"></span> الفعلي</span>
+  <span><span style="width:16px;height:2px;background:oklch(0.78 0.145 163)"></span> الأساس الآلي</span>
+  <span><span style="width:16px;height:0;border-top:2px dashed oklch(0.83 0.13 85)"></span> توقع المحلل</span>
+  <span><span style="width:16px;height:10px;border-radius:3px;background:oklch(0.83 0.13 85);opacity:.2"></span> الدلتا</span>
+  <span><span style="width:12px;height:10px;border-radius:2px;background:oklch(0.83 0.13 85);opacity:.35"></span> القيمة الحالية (مخصومة)</span>
+</div>
