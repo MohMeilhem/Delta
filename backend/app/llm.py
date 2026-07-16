@@ -67,6 +67,16 @@ class NewsSummary(BaseModel):
     source: str = "llm"
 
 
+class AnomalyExplanation(BaseModel):
+    """One grounded sentence attaching a cause to a z-score flag (Problem 3
+    of Analyst Model v2). `confidence` is "grounded" when the cause cites
+    aligned news, "tentative" when nothing in the news window explains it."""
+
+    cause_ar: str = Field(max_length=300)
+    cause_en: str = Field(max_length=300)
+    confidence: Literal["grounded", "tentative"]
+
+
 class Scenario(BaseModel):
     title_ar: str
     points_ar: list[str] = Field(min_length=3, max_length=3)
@@ -218,6 +228,21 @@ Tie points to the numbers above where possible."""
     )
 
 
+_NEGATIVE_HINTS = ["خسائر", "انخفاض", "ضغوط", "السالب", "تراجع"]
+_POSITIVE_HINTS = ["نمو", "توزيع أرباح", "شراكة", "رفع السعر", "افتتح", "قفز",
+                   "مكسب", "توسع", "ذروة", "تدعم"]
+
+
+def classify_headline_sentiment(headline: str) -> str:
+    """Heuristic Arabic headline sentiment — the offline classifier shared by
+    the news-summary fallback and the anomaly cause-correlation ranking."""
+    if any(h in headline for h in _NEGATIVE_HINTS):
+        return "سلبي"
+    if any(h in headline for h in _POSITIVE_HINTS):
+        return "إيجابي"
+    return "محايد"
+
+
 # --------------------------------------------------------------------------
 # 2. News summary
 # --------------------------------------------------------------------------
@@ -249,15 +274,7 @@ News for {c.name_ar} / {c.name_en}:
     # Fallback: curated summary if available, else heuristic sentiment.
     section = _fallbacks()["news_summary"]
     entry = section.get(ticker) if lang == "ar" else None
-    negative_hints = ["خسائر", "انخفاض", "ضغوط", "السالب", "تراجع"]
-    positive_hints = ["نمو", "توزيع أرباح", "شراكة", "رفع السعر", "افتتح", "قفز", "مكسب", "توسع", "ذروة", "تدعم"]
-
-    def classify(headline: str) -> str:
-        if any(h in headline for h in negative_hints):
-            return "سلبي"
-        if any(h in headline for h in positive_hints):
-            return "إيجابي"
-        return "محايد"
+    classify = classify_headline_sentiment
 
     if entry:
         summary = entry["summary_ar"]
@@ -372,4 +389,61 @@ Plus monitoring_ar: 3-4 concrete quarterly indicators an analyst should track
         thesis_breakers=fmt(entry["thesis_breakers"], None, None),
         monitoring_ar=[m.format(**nums) for m in entry.get("monitoring_ar", [])],
         source="fallback",
+    )
+
+
+# --------------------------------------------------------------------------
+# 4. Anomaly cause synthesis (Analyst Model v2, Problem 3)
+# --------------------------------------------------------------------------
+
+def explain_anomaly(
+    company: Company,
+    metric_label_en: str,
+    z_score: float,
+    direction: str,  # "up" | "down"
+    latest_value: float,
+    trailing_mean: float,
+    candidate_news: list[dict],  # [{headline, date, source, body?}] ranked best-first
+) -> AnomalyExplanation:
+    """One grounded sentence (ar + en) explaining what likely caused a flag.
+
+    LLM path cites only the candidate news it is given; the offline fallback
+    templates the top-ranked aligned headline. Confidence is "tentative"
+    whenever no news plausibly explains the move.
+    """
+    news_block = "\n".join(
+        f"- [{n['date']}] {n['headline']} ({n['source']})" for n in candidate_news
+    ) or "none"
+
+    prompt = f"""You are a Tadawul equity research analyst. A z-score monitor flagged an unusual quarter.
+
+Company: {company.name_ar} / {company.name_en} ({company.ticker})
+Flag: {metric_label_en} moved {direction} — latest {latest_value:,.4g} vs trailing-8-quarter mean {trailing_mean:,.4g}, z-score {z_score:+.1f}.
+
+Candidate news near the flagged quarter (ranked most-plausible first):
+{news_block}
+
+Return cause_ar and cause_en: ONE sentence each stating the most likely cause,
+citing a headline from the list when one plausibly explains the move (quote or
+closely paraphrase it). If none of the news explains the move, say the deviation
+has no identified news driver and deserves manual verification before adjusting
+assumptions, and set confidence="tentative". Set confidence="grounded" only when
+citing news. Never invent events not in the list."""
+
+    result = _parse_with_retry(prompt, AnomalyExplanation)
+    if result is not None:
+        return result
+
+    # Offline fallback: template from the top-ranked aligned headline.
+    if candidate_news:
+        top = candidate_news[0]
+        return AnomalyExplanation(
+            cause_ar=f"يرجَّح ارتباط هذا الانحراف بـ«{top['headline']}» ({top['source']}، {top['date']}).",
+            cause_en=f"Most plausibly linked to: “{top['headline']}” ({top['source']}, {top['date']}).",
+            confidence="grounded",
+        )
+    return AnomalyExplanation(
+        cause_ar="لا توجد أخبار ضمن النافذة الزمنية تفسر هذا الانحراف — يستحق تحققاً يدوياً قبل تعديل الفرضيات.",
+        cause_en="No news in the window explains this deviation — verify manually before adjusting assumptions.",
+        confidence="tentative",
     )

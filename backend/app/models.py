@@ -42,6 +42,18 @@ class QuarterFinancials(BaseModel):
     zakat_expense: float
     free_cash_flow: float
     share_price: float
+    # Analyst Model v2 metric series (see data/augment_seed.py). The EBITDA
+    # and current-ratio fields are structurally null for banks — banks have
+    # no EBITDA line and no current/non-current split.
+    equity: float | None = None
+    total_assets: float | None = None
+    roe: float | None = None
+    roa: float | None = None
+    ebitda: float | None = None
+    ebitda_margin: float | None = None
+    current_assets: float | None = None
+    current_liabilities: float | None = None
+    current_ratio: float | None = None
 
 
 class CompanyProfile(Company):

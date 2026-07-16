@@ -99,20 +99,26 @@ class _LLMReply(BaseModel):
 
 
 # UI slider ranges (AssumptionPanel) — proposals are clamped so an applied
-# scenario always lands on a reachable slider position.
+# scenario always lands on a reachable slider position. The v2 sliders are
+# nullable (None = baseline / n.a. for banks) and clamp only when set.
 _UI_RANGES = {
     "revenue_growth": (-0.20, 0.40),
     "net_margin": (0.01, 0.70),
     "discount_rate": (0.05, 0.20),
     "terminal_growth": (0.0, 0.06),
     "exit_pe": (2.0, 40.0),
+    "ebitda_margin": (0.02, 0.80),
+    "roe": (0.01, 0.50),
+    "roa": (0.005, 0.30),
+    "current_ratio": (0.5, 4.0),
 }
 
 
 def _clamp_proposal(p: Assumptions) -> Assumptions:
     values = p.model_dump()
     for key, (lo, hi) in _UI_RANGES.items():
-        values[key] = min(max(values[key], lo), hi)
+        if values.get(key) is not None:
+            values[key] = min(max(values[key], lo), hi)
     if values.get("fcf_conversion") is not None:
         values["fcf_conversion"] = min(max(values["fcf_conversion"], 0.2), 1.2)
     return Assumptions(**values)

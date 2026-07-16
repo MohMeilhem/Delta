@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { ArrowCounterClockwise, CaretDown, Function } from '@phosphor-icons/react'
-import type { Assumptions } from '../api'
+import { ArrowCounterClockwise, CaretDown, Function, Warning, X } from '@phosphor-icons/react'
+import type { Assumptions, QuarterFinancials } from '../api'
 import { fmt, fmtPct } from '../format'
 import { useLang } from '../i18n'
 import { EASE, NumberTicker } from './ui'
@@ -21,11 +21,29 @@ const SLIDERS: SliderSpec[] = [
   { key: 'terminal_growth', min: 0, max: 0.06, step: 0.0025 },
 ]
 
+/** Nullable v2 metric sliders: null baseline = structurally n.a. (banks). */
+interface MetricSpec {
+  key: 'ebitda_margin' | 'roe' | 'roa' | 'current_ratio'
+  min: number
+  max: number
+  step: number
+  asRatio?: boolean // format as 1.35x instead of a percentage
+  bankNA?: boolean
+}
+
+const METRIC_SLIDERS: MetricSpec[] = [
+  { key: 'ebitda_margin', min: 0.02, max: 0.8, step: 0.005, bankNA: true },
+  { key: 'roe', min: 0.01, max: 0.5, step: 0.0025 },
+  { key: 'roa', min: 0.005, max: 0.3, step: 0.0025 },
+  { key: 'current_ratio', min: 0.5, max: 4, step: 0.05, asRatio: true, bankNA: true },
+]
+
 export default function AssumptionPanel({
   value,
   baseline,
   incomeLabel,
   isIslamic,
+  latest,
   onChange,
   onReset,
   dirty,
@@ -34,6 +52,7 @@ export default function AssumptionPanel({
   baseline: Assumptions
   incomeLabel: string
   isIslamic: boolean
+  latest?: QuarterFinancials | null
   onChange: (a: Assumptions) => void
   onReset: () => void
   dirty: boolean
@@ -47,7 +66,23 @@ export default function AssumptionPanel({
     discount_rate: t.discountRate,
     terminal_growth: t.terminalGrowth,
   }
+  const metricLabels: Record<MetricSpec['key'], string> = {
+    ebitda_margin: t.ebitdaMargin,
+    roe: t.roeLabel,
+    roa: t.roaLabel,
+    current_ratio: t.currentRatioLabel,
+  }
   const gordonMode = value.terminal_method === 'gordon'
+
+  // DuPont soft-consistency check: ROE implies a net margin via the latest
+  // book value; warn (never lock) when the sliders drift >3pts apart.
+  const roeNow = value.roe ?? baseline.roe
+  const impliedMargin =
+    roeNow != null && latest?.equity && latest.revenue
+      ? (roeNow * latest.equity) / (4 * latest.revenue)
+      : null
+  const inconsistent =
+    impliedMargin != null && Math.abs(impliedMargin - value.net_margin) > 0.03
 
   return (
     <div className="space-y-5">
@@ -105,6 +140,143 @@ export default function AssumptionPanel({
           </div>
         )
       })}
+
+      {/* ---- v2 metric sliders (ML-projected baselines) ---- */}
+      <div className="border-t border-line pt-4">
+        <h3 className="mb-4 text-xs font-semibold text-ink-muted">{t.v2Section}</h3>
+        <div className="space-y-5">
+          {METRIC_SLIDERS.map((s) => {
+            const base = baseline[s.key]
+            const na = base == null // structurally n.a. (banks)
+            const current = value[s.key] ?? base ?? s.min
+            const changed = !na && value[s.key] != null && Math.abs(current - (base ?? 0)) > 1e-9
+            const fmtVal = (v: number) => (s.asRatio ? `${fmt(v)}x` : fmtPct(v * 100))
+            return (
+              <div key={s.key} className={na ? 'opacity-40' : ''}>
+                <div className="mb-1.5 flex items-baseline justify-between text-sm">
+                  <label htmlFor={s.key} className="text-ink-muted">
+                    {metricLabels[s.key]}
+                  </label>
+                  {na ? (
+                    <span className="text-xs text-ink-faint">{t.naBanks}</span>
+                  ) : (
+                    <NumberTicker
+                      value={s.asRatio ? current : current * 100}
+                      format={(v) => (s.asRatio ? `${fmt(v)}x` : fmtPct(v))}
+                      className={`text-sm font-medium transition-colors duration-200 ${changed ? 'text-analyst' : 'text-ink'}`}
+                    />
+                  )}
+                </div>
+                <input
+                  id={s.key}
+                  type="range"
+                  dir="ltr"
+                  min={s.min}
+                  max={s.max}
+                  step={s.step}
+                  value={current}
+                  disabled={na}
+                  aria-label={metricLabels[s.key]}
+                  title={na ? t.naBanks : undefined}
+                  onChange={(e) => onChange({ ...value, [s.key]: Number(e.target.value) })}
+                />
+                <div dir="ltr" className="mt-1 flex justify-between text-[10px] text-ink-faint">
+                  <span className="num">{fmtVal(s.min)}</span>
+                  {changed && base != null && (
+                    <span className="num">
+                      {t.baseLabel}: {fmtVal(base)}
+                    </span>
+                  )}
+                  <span className="num">{fmtVal(s.max)}</span>
+                </div>
+              </div>
+            )
+          })}
+
+          {/* P/E: the exit-multiple lever, always visible; dragging it in
+              Gordon mode switches the terminal method (it is inert otherwise) */}
+          <div>
+            <div className="mb-1.5 flex items-baseline justify-between text-sm">
+              <label htmlFor="pe_slider" className="text-ink-muted">
+                {t.exitPE}
+              </label>
+              <NumberTicker
+                value={value.exit_pe}
+                format={(v) => `${fmt(v)}x`}
+                className={`text-sm font-medium ${!gordonMode ? 'text-analyst' : 'text-ink'}`}
+              />
+            </div>
+            <input
+              id="pe_slider"
+              type="range"
+              dir="ltr"
+              min={2}
+              max={40}
+              step={0.5}
+              value={value.exit_pe}
+              aria-label={t.exitPE}
+              onChange={(e) =>
+                onChange({ ...value, exit_pe: Number(e.target.value), terminal_method: 'exit_multiple' })
+              }
+            />
+            {gordonMode && (
+              <div className="mt-1 text-[10px] text-ink-faint">{t.peExitHint}</div>
+            )}
+          </div>
+        </div>
+
+        {inconsistent && impliedMargin != null && (
+          <div className="mt-4 flex items-start gap-2 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-[11px] leading-5 text-warning">
+            <Warning size={14} weight="bold" className="mt-0.5 shrink-0" />
+            {t.dupontHint(fmtPct(impliedMargin * 100), fmtPct(value.net_margin * 100))}
+          </div>
+        )}
+      </div>
+
+      {/* ---- excluded incident quarters ---- */}
+      {value.exclude_quarters.length > 0 && (
+        <div className="border-t border-line pt-4">
+          <h3 className="mb-2 text-xs font-semibold text-ink-muted">{t.excludedQuarters}</h3>
+          <div className="flex flex-wrap gap-1.5">
+            {value.exclude_quarters.map((q) => (
+              <button
+                key={q}
+                onClick={() =>
+                  onChange({ ...value, exclude_quarters: value.exclude_quarters.filter((x) => x !== q) })
+                }
+                title={t.restoreQuarter}
+                className="btn num flex items-center gap-1.5 rounded-full border border-warning/50 bg-warning/10 px-2.5 py-1 text-[11px] text-warning hover:bg-warning/20"
+              >
+                {q}
+                <X size={11} weight="bold" />
+              </button>
+            ))}
+          </div>
+          <div className="mt-3 flex items-center gap-3 text-[11px] text-ink-faint">
+            <span>{t.excludeScope}</span>
+            <div className="flex rounded-lg border border-line p-0.5" role="tablist">
+              {(
+                [
+                  ['company', t.scopeCompany],
+                  ['sector', t.scopeSector],
+                ] as const
+              ).map(([scope, label]) => (
+                <button
+                  key={scope}
+                  role="tab"
+                  aria-selected={value.exclude_scope === scope}
+                  onClick={() => onChange({ ...value, exclude_scope: scope })}
+                  className={`btn px-2 py-0.5 ${
+                    value.exclude_scope === scope ? 'bg-surface-2 text-ink' : 'hover:text-ink'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ---- advanced levers ---- */}
       <button

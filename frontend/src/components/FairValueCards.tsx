@@ -59,7 +59,7 @@ export default function FairValueCards({
       {/* valuation breakdown: a quiet fact line under the readouts */}
       <div className="mt-7 flex flex-wrap items-baseline justify-center gap-x-8 gap-y-2 text-xs">
         <span className="font-medium text-ink-muted">
-          {b.method === 'ddm_islamic' ? t.ddmIslamic : t.dcf}
+          {b.method === 'ddm_islamic' ? t.ddmIslamic : b.method === 'ddm_bank' ? t.ddmBank : t.dcf}
         </span>
         <Fact k={t.pvForecast} v={fmtMillions(b.pv_forecast)} />
         <Fact k={t.pvTerminal} v={fmtMillions(b.pv_terminal)} />

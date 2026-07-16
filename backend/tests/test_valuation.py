@@ -57,7 +57,10 @@ def test_islamic_bank_uses_ddm_and_financing_income_label():
             assert b["breakdown"]["method"] == "ddm_islamic"
             assert b["income_label_ar"] == "دخل التمويل"
         else:
-            assert b["breakdown"]["method"] == "dcf"
+            # Analyst Model v2: ALL banks route through the dividend /
+            # book-value path (ROE-driven justified-P/B terminal); only the
+            # label distinguishes Islamic banks.
+            assert b["breakdown"]["method"] == "ddm_bank"
             assert b["income_label_ar"] == "الإيرادات"
 
 

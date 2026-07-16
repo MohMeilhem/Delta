@@ -23,12 +23,18 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import httpx
-from dotenv import load_dotenv
+
+try:
+    from dotenv import load_dotenv
+except ModuleNotFoundError:  # keep the serverless bundle import-safe
+    load_dotenv = None
 from pydantic import BaseModel
 
 from . import data, marketdata
 
-load_dotenv(Path(__file__).resolve().parent.parent / ".env")  # backend/.env
+# Same test guard as app/__init__: the suite must never pick up a live key.
+if load_dotenv is not None and not os.environ.get("DELTA_NO_ENV_FILE"):
+    load_dotenv(Path(__file__).resolve().parent.parent / ".env")  # backend/.env
 
 SAHMK_BASE = "https://app.sahmk.sa/api/v1"
 SAHMK_TIMEOUT_S = 3.0

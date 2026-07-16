@@ -28,6 +28,16 @@ export interface QuarterFinancials {
   zakat_expense: number
   free_cash_flow: number
   share_price: number
+  // Analyst Model v2 series; EBITDA/current fields are null for banks
+  equity: number | null
+  total_assets: number | null
+  roe: number | null
+  roa: number | null
+  ebitda: number | null
+  ebitda_margin: number | null
+  current_assets: number | null
+  current_liabilities: number | null
+  current_ratio: number | null
 }
 
 export interface CompanyProfile extends Company {
@@ -161,6 +171,13 @@ export interface Assumptions {
   fcf_conversion: number | null
   terminal_method: 'gordon' | 'exit_multiple'
   exit_pe: number
+  // Analyst Model v2: incident exclusion + the extended metric sliders
+  exclude_quarters: string[]
+  exclude_scope: 'company' | 'sector'
+  ebitda_margin: number | null
+  roe: number | null
+  roa: number | null
+  current_ratio: number | null
 }
 
 export interface ProjectedQuarter {
@@ -170,7 +187,7 @@ export interface ProjectedQuarter {
 }
 
 export interface ValuationBreakdown {
-  method: 'dcf' | 'ddm_islamic'
+  method: 'dcf' | 'ddm_islamic' | 'ddm_bank'
   pv_forecast: number
   pv_terminal: number
   zakat_total: number
@@ -214,6 +231,12 @@ export interface AnomalyFlag {
   latest_value: number
   trailing_mean: number
   explanation_ar: string
+  // v2 cause-labelling: why it broke, grounded in news near the quarter
+  cause_ar: string
+  cause_en: string
+  cause_confidence: 'grounded' | 'tentative'
+  causal_news: { headline: string; date: string; source: string }[]
+  suggested_exclusion: string | null
 }
 
 export interface AgentReport {
@@ -310,12 +333,15 @@ export const api = {
   company: (t: string) => get<CompanyProfile>(`/companies/${t}`),
   financials: (t: string) => get<QuarterFinancials[]>(`/companies/${t}/financials`),
   news: (t: string) => get<NewsItem[]>(`/companies/${t}/news`),
-  baseline: (t: string, horizon = 8) =>
-    get<BaselineResponse>(`/companies/${t}/baseline?horizon=${horizon}`),
+  baseline: (t: string, horizon = 8, exclude: string[] = [], scope = 'company') =>
+    get<BaselineResponse>(
+      `/companies/${t}/baseline?horizon=${horizon}&exclude=${exclude.join(',')}&exclude_scope=${scope}`,
+    ),
   technicals: (t: string) => get<Technicals>(`/companies/${t}/technicals`),
   live: (t: string) => get<LiveQuoteData>(`/companies/${t}/live`),
   valuation: (t: string, a: Assumptions) => post<AnalystValuation>(`/companies/${t}/valuation`, a),
-  agentReport: (t: string) => get<AgentReport>(`/companies/${t}/agent-report`),
+  agentReport: (t: string, exclude: string[] = []) =>
+    get<AgentReport>(`/companies/${t}/agent-report?exclude=${exclude.join(',')}`),
   tape: () => get<TapeEntry[]>('/market/tape'),
   prices: (t: string, range: PriceRange) => get<PriceSeries>(`/companies/${t}/prices?range=${range}`),
   peers: (t: string) => get<PeerRow[]>(`/companies/${t}/peers`),

@@ -64,18 +64,35 @@ export default function CompanyPage() {
     }
   }, [ticker])
 
-  // ---- horizon changed: the baseline itself must be re-projected ----
+  // ---- horizon or exclusion changed: the baseline must be re-projected
+  // (excluded quarters leave the fit; the ML re-fits on normalized history) ----
   useEffect(() => {
     if (!assumptions || !baseline) return
-    if (assumptions.horizon_quarters === baseline.assumptions.horizon_quarters) return
+    const b = baseline.assumptions
+    if (
+      assumptions.horizon_quarters === b.horizon_quarters &&
+      assumptions.exclude_quarters.join(',') === b.exclude_quarters.join(',') &&
+      assumptions.exclude_scope === b.exclude_scope
+    )
+      return
     let live = true
-    api.baseline(ticker, assumptions.horizon_quarters).then((b) => {
-      if (live) setBaseline(b)
-    })
+    api
+      .baseline(ticker, assumptions.horizon_quarters, assumptions.exclude_quarters, assumptions.exclude_scope)
+      .then((nb) => {
+        if (live) setBaseline(nb)
+      })
     return () => {
       live = false
     }
   }, [assumptions, baseline, ticker])
+
+  const excludeQuarter = useCallback((quarter: string) => {
+    setAssumptions((a) =>
+      a && !a.exclude_quarters.includes(quarter)
+        ? { ...a, exclude_quarters: [...a.exclude_quarters, quarter] }
+        : a,
+    )
+  }, [])
 
   // ---- debounced live revaluation while sliders move ----
   const requestSeq = useRef(0)
@@ -100,6 +117,7 @@ export default function CompanyPage() {
       const av = assumptions[k]
       const bv = b[k]
       if (typeof av === 'number' && typeof bv === 'number') return Math.abs(av - bv) > 1e-9
+      if (Array.isArray(av) && Array.isArray(bv)) return av.join(',') !== bv.join(',')
       return av !== bv
     })
   }, [assumptions, baseline])
@@ -176,7 +194,11 @@ export default function CompanyPage() {
                   )}
                 </div>
                 <div className="mt-3">
-                  <AgentFlags ticker={ticker} />
+                  <AgentFlags
+                    ticker={ticker}
+                    exclude={assumptions?.exclude_quarters ?? []}
+                    onExclude={excludeQuarter}
+                  />
                 </div>
               </div>
               <div className="text-end">
@@ -290,6 +312,7 @@ export default function CompanyPage() {
               baseline={baseline.assumptions}
               incomeLabel={incomeLabel}
               isIslamic={baseline.is_islamic_bank}
+              latest={history?.at(-1) ?? null}
               onChange={setAssumptions}
               onReset={reset}
               dirty={dirty}

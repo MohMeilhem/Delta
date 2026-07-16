@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import statistics
 from datetime import date, timedelta
+from functools import lru_cache
 
 from pydantic import BaseModel
 
@@ -26,12 +27,27 @@ TRAILING = 8
 # Static demo dataset — "today" is pinned to just after the latest quarter.
 AS_OF = date(2026, 7, 4)
 NEWS_RECENCY_DAYS = 10
+# Cause correlation: news within ±N days of the flagged quarter's end date
+# is a candidate explanation (Analyst Model v2, Problem 3).
+CAUSE_WINDOW_DAYS = 45
+
+METRIC_LABELS_EN = {
+    "revenue_growth": "Revenue growth",
+    "net_margin": "Net margin",
+    "free_cash_flow": "Free cash flow",
+}
 
 METRIC_LABELS_AR = {
     "revenue_growth": "نمو الإيرادات",
     "net_margin": "هامش صافي الربح",
     "free_cash_flow": "التدفق النقدي الحر",
 }
+
+
+class NewsContext(BaseModel):
+    headline: str
+    date: str
+    source: str
 
 
 class AnomalyFlag(BaseModel):
@@ -42,13 +58,14 @@ class AnomalyFlag(BaseModel):
     direction: str  # "up" | "down"
     latest_value: float
     trailing_mean: float
-    explanation_ar: str
-
-
-class NewsContext(BaseModel):
-    headline: str
-    date: str
-    source: str
+    explanation_ar: str  # the statistical read (what broke the pattern)
+    # v2 cause-labelling: WHY it broke, grounded in news near the quarter.
+    cause_ar: str = ""
+    cause_en: str = ""
+    cause_confidence: str = "tentative"  # "grounded" | "tentative"
+    causal_news: list[NewsContext] = []
+    # the quarter an analyst would exclude to normalize the history
+    suggested_exclusion: str | None = None
 
 
 class AgentReport(BaseModel):
@@ -91,9 +108,15 @@ def _explain(metric: str, z: float, latest: float, mean: float,
             f"انحراف معياري {z:+.1f}.")
 
 
-def detect_anomalies(ticker: str) -> list[AnomalyFlag]:
+def detect_anomalies(ticker: str, exclude: tuple[str, ...] = ()) -> list[AnomalyFlag]:
+    """`exclude` drops quarters from the z-score computation entirely — an
+    analyst-excluded incident quarter must leave the trailing window too, or
+    it would distort the very "normal range" it was excluded from (Analyst
+    Model v2, Problem 2). One exclusion set serves projection and anomaly."""
     company = data.company(ticker)
     fins = data.financials(ticker) or []
+    if exclude:
+        fins = [f for f in fins if f.quarter not in set(exclude)]
     if company is None or len(fins) < TRAILING + 2:
         return []
 
@@ -129,12 +152,80 @@ def detect_anomalies(ticker: str) -> list[AnomalyFlag]:
     return flags
 
 
-def agent_report(ticker: str) -> AgentReport:
+def _quarter_end(quarter: str) -> date:
+    """'2026Q2' -> date(2026, 6, 30)."""
+    year, qnum = int(quarter[:4]), int(quarter[-1])
+    month = qnum * 3
+    last_day = {3: 31, 6: 30, 9: 30, 12: 31}[month]
+    return date(year, month, last_day)
+
+
+def _causal_news(ticker: str, direction: str, quarter: str) -> list[NewsContext]:
+    """Candidate causes: news within ±CAUSE_WINDOW_DAYS of the flagged
+    quarter's end, ranked by sentiment alignment (negative news should
+    explain a drop, positive a spike) then by date proximity. Top 3."""
+    from . import llm  # local import: llm pulls valuation; keep startup light
+
+    q_end = _quarter_end(quarter)
+    aligned_sentiment = "سلبي" if direction == "down" else "إيجابي"
+    scored = []
+    for item in data.news(ticker) or []:
+        item_date = date.fromisoformat(item.date)
+        distance = abs((item_date - q_end).days)
+        if distance > CAUSE_WINDOW_DAYS:
+            continue
+        sentiment = llm.classify_headline_sentiment(item.headline)
+        scored.append((0 if sentiment == aligned_sentiment else 1, distance, item))
+    scored.sort(key=lambda s: (s[0], s[1]))
+    return [NewsContext(headline=i.headline, date=i.date, source=i.source)
+            for _, _, i in scored[:3]]
+
+
+@lru_cache(maxsize=256)
+def _cached_explanation(ticker: str, metric: str, quarter: str, direction: str,
+                        z_score: float, latest_value: float, trailing_mean: float):
+    """The cause of a given (ticker, metric, quarter) flag is stable — cache
+    it so opening a company doesn't re-pay LLM latency every time."""
+    from . import llm
+
+    company = data.company(ticker)
+    assert company is not None
+    candidates = _causal_news(ticker, direction, quarter)
+    explanation = llm.explain_anomaly(
+        company,
+        metric_label_en=METRIC_LABELS_EN.get(metric, metric),
+        z_score=z_score,
+        direction=direction,
+        latest_value=latest_value,
+        trailing_mean=trailing_mean,
+        candidate_news=[n.model_dump() for n in candidates],
+    )
+    return explanation, candidates
+
+
+def _attach_causes(company: Company, quarter: str, flags: list[AnomalyFlag]) -> None:
+    """Label every flag with a grounded cause + the exclusion suggestion."""
+    for f in flags:
+        explanation, candidates = _cached_explanation(
+            company.ticker, f.metric, quarter, f.direction,
+            f.z_score, f.latest_value, f.trailing_mean)
+        f.cause_ar = explanation.cause_ar
+        f.cause_en = explanation.cause_en
+        f.cause_confidence = explanation.confidence
+        f.causal_news = candidates
+        f.suggested_exclusion = quarter
+
+
+def agent_report(ticker: str, exclude: tuple[str, ...] = ()) -> AgentReport:
     """The monitoring agent: everything that runs when a company is opened."""
     company = data.company(ticker)
     assert company is not None
     fins = data.financials(ticker) or []
-    flags = detect_anomalies(ticker)
+    if exclude:
+        fins = [f for f in fins if f.quarter not in set(exclude)] or fins
+    flags = detect_anomalies(ticker, exclude)
+    if flags and fins:
+        _attach_causes(company, fins[-1].quarter, flags)
 
     # News recency only matters when there is something anomalous to
     # correlate it with — clean companies stay quiet.

@@ -19,6 +19,8 @@ import math
 import random
 from pathlib import Path
 
+from augment_seed import augment_rows
+
 HERE = Path(__file__).parent
 RNG = random.Random(42)
 
@@ -550,7 +552,10 @@ def main() -> None:
         {**{k: v for k, v in c.items() if k != "params"}, **leadership_fields(c["ticker"])}
         for c in C
     ]
-    financials = {c["ticker"]: gen_financials(c) for c in C}
+    # v2 metric series (equity/ROE/ROA/EBITDA/current ratio) are derived
+    # AFTER generation as pure functions of the base series — no extra RNG
+    # draws, so the base numbers are identical with or without this step.
+    financials = {c["ticker"]: augment_rows(c["sector"], gen_financials(c)) for c in C}
     news = {c["ticker"]: gen_news(c) for c in C}
 
     (HERE / "companies.json").write_text(

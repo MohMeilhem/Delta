@@ -118,9 +118,19 @@ def company_news(ticker: str) -> list[NewsItem]:
     return data.news(ticker) or []
 
 
+def _parse_exclude(exclude: str) -> tuple[str, ...]:
+    """Comma-separated quarter labels ('2026Q2,2025Q4') -> tuple."""
+    return tuple(q.strip() for q in exclude.split(",") if q.strip())
+
+
 @app.get("/companies/{ticker}/baseline", response_model=BaselineResponse)
-def company_baseline(ticker: str, horizon: int = 8) -> BaselineResponse:
-    return valuation.baseline(_company_or_404(ticker), max(4, min(12, horizon)))
+def company_baseline(ticker: str, horizon: int = 8, exclude: str = "",
+                     exclude_scope: str = "company") -> BaselineResponse:
+    """`exclude` drops incident quarters from the fit (gapped trend index);
+    scope "sector" also removes them from the pooled sector training set."""
+    scope = exclude_scope if exclude_scope in ("company", "sector") else "company"
+    return valuation.baseline(_company_or_404(ticker), max(4, min(12, horizon)),
+                              _parse_exclude(exclude), scope)
 
 
 @app.post("/companies/{ticker}/valuation", response_model=AnalystValuationResponse)
@@ -129,9 +139,11 @@ def company_valuation(ticker: str, assumptions: Assumptions) -> AnalystValuation
 
 
 @app.get("/companies/{ticker}/agent-report", response_model=AgentReport)
-def company_agent_report(ticker: str) -> AgentReport:
+def company_agent_report(ticker: str, exclude: str = "") -> AgentReport:
+    """Excluded quarters leave the z-score baseline too — one exclusion set
+    serves both the projection and the anomaly window."""
     _company_or_404(ticker)
-    return anomaly.agent_report(ticker)
+    return anomaly.agent_report(ticker, _parse_exclude(exclude))
 
 
 @app.get("/companies/{ticker}/prices", response_model=prices.PriceSeries)
