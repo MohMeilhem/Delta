@@ -18,7 +18,12 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-import yfinance as yf
+try:
+    import yfinance as yf
+except ModuleNotFoundError:
+    # Serverless build (root requirements.txt) omits yfinance to stay under
+    # the function size limit; every fetch below already degrades to empty.
+    yf = None
 from pydantic import BaseModel
 
 FETCH_TIMEOUT_S = 8.0  # yfinance has no native timeout; enforced via requests session

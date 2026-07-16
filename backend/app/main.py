@@ -1,8 +1,9 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from . import anomaly, data, live, llm, prices, signals, valuation
+from . import anomaly, chat, data, live, llm, prices, signals, valuation
 from .anomaly import AgentReport
+from .chat import ChatReply, ChatRequest
 from .llm import CompanyOverview, Lang, NewsSummary, ScenarioSet
 from .models import PeerRow, TapeEntry, SubscriptionRequest, SubscriptionResponse
 from .valuation import SensitivityResponse
@@ -238,3 +239,10 @@ def company_news_summary(ticker: str, lang: Lang = "ar") -> NewsSummary:
 def company_scenarios(ticker: str, assumptions: Assumptions, lang: Lang = "ar") -> ScenarioSet:
     _company_or_404(ticker)
     return llm.generate_scenarios(ticker, assumptions, lang)
+
+
+@app.post("/companies/{ticker}/chat", response_model=ChatReply)
+def company_chat(ticker: str, req: ChatRequest) -> ChatReply:
+    """Analyst chat agent grounded in the company's data room (LLM with
+    rule-based offline fallback)."""
+    return chat.respond(_company_or_404(ticker), req)

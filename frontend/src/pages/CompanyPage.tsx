@@ -10,6 +10,7 @@ import type {
   QuarterFinancials,
 } from '../api'
 import AgentFlags from '../components/AgentFlags'
+import AnalystChat from '../components/AnalystChat'
 import AssumptionPanel from '../components/AssumptionPanel'
 import DeltaChart, { type Metric } from '../components/DeltaChart'
 import FairValueCards from '../components/FairValueCards'
@@ -341,6 +342,8 @@ export default function CompanyPage() {
           />
         </section>
       )}
+
+      <AnalystChat ticker={ticker} assumptions={assumptions} onApply={setAssumptions} />
     </main>
   )
 }

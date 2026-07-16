@@ -3,6 +3,7 @@
 # Local dev uses backend/requirements.txt instead.
 fastapi
 pydantic
+python-dotenv
 anthropic
 httpx
 numpy

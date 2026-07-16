@@ -57,6 +57,17 @@ def news(ticker: str) -> list[NewsItem] | None:
     return [NewsItem(**i) for i in items]
 
 
+@lru_cache(maxsize=1)
+def _macro_raw() -> dict:
+    return json.loads((DATA_DIR / "macro.json").read_text(encoding="utf-8"))
+
+
+def macro() -> dict:
+    """Saudi macro series (Brent, SAMA repo) aligned to the seed quarters."""
+    raw = _macro_raw()
+    return {"series": raw["series"], "context_en": raw.get("context_en", [])}
+
+
 def subscribers() -> list[dict]:
     if not SUBSCRIBERS_PATH.exists():
         return []

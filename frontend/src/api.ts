@@ -254,6 +254,29 @@ export interface ScenarioSet {
   source: 'llm' | 'fallback'
 }
 
+export interface ChatTurn {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+export interface AssumptionRating {
+  parameter: 'revenue_growth' | 'net_margin' | 'discount_rate' | 'terminal_growth'
+  verdict: 'conservative' | 'balanced' | 'aggressive'
+  note_ar: string
+}
+
+export interface ChatReply {
+  reply_ar: string
+  key_numbers_ar: string[]
+  follow_ups_ar: string[]
+  assumption_ratings: AssumptionRating[] | null
+  proposed_assumptions: Assumptions | null
+  proposed_label_ar: string | null
+  proposed_fair_value: number | null
+  proposed_upside_pct: number | null
+  source: 'llm' | 'fallback'
+}
+
 export interface SubscribeRequest {
   name: string
   email: string
@@ -304,5 +327,7 @@ export const api = {
     get<NewsSummary>(`/companies/${t}/news-summary?lang=${lang}`),
   scenarios: (t: string, a: Assumptions, lang: string) =>
     post<ScenarioSet>(`/companies/${t}/scenarios?lang=${lang}`, a),
+  chat: (t: string, messages: ChatTurn[], assumptions: Assumptions | null, lang: string) =>
+    post<ChatReply>(`/companies/${t}/chat`, { messages, assumptions, lang }),
   subscribe: (payload: SubscribeRequest) => post<SubscribeResponse>('/subscribe', payload),
 }
