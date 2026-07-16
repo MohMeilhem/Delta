@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
-import { BrowserRouter, Link, Route, Routes, useLocation } from 'react-router-dom'
+import { BrowserRouter, Link, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { Moon, Sun, Translate } from '@phosphor-icons/react'
+import { Moon, SignOut, Sun, Translate } from '@phosphor-icons/react'
 import Home from './pages/Home'
 import CompanyPage from './pages/CompanyPage'
+import Login from './pages/Login'
+import { AuthProvider, RequireAuth, useAuth } from './auth'
 import { api } from './api'
 import type { TapeEntry } from './api'
 import { LangProvider, useLang } from './i18n'
@@ -15,12 +17,24 @@ export default function App() {
   return (
     <ThemeProvider>
       <LangProvider>
-        <BrowserRouter>
-          <TopBar />
-          <AnimatedRoutes />
-        </BrowserRouter>
+        <AuthProvider>
+          <BrowserRouter>
+            <Shell />
+          </BrowserRouter>
+        </AuthProvider>
       </LangProvider>
     </ThemeProvider>
+  )
+}
+
+/* The login page carries its own chrome; the top bar shows everywhere else. */
+function Shell() {
+  const { pathname } = useLocation()
+  return (
+    <>
+      {pathname !== '/login' && <TopBar />}
+      <AnimatedRoutes />
+    </>
   )
 }
 
@@ -37,8 +51,11 @@ function AnimatedRoutes() {
         transition={{ duration: 0.25, ease: EASE }}
       >
         <Routes location={location}>
-          <Route path="/" element={<Home />} />
-          <Route path="/company/:ticker" element={<CompanyPage />} />
+          <Route path="/login" element={<Login />} />
+          <Route element={<RequireAuth />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/company/:ticker" element={<CompanyPage />} />
+          </Route>
         </Routes>
       </motion.div>
     </AnimatePresence>
@@ -48,6 +65,8 @@ function AnimatedRoutes() {
 function TopBar() {
   const { t, lang, setLang } = useLang()
   const { theme, setTheme } = useTheme()
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
   return (
     <div className="sticky top-0 z-40 border-b border-line bg-bg/85 backdrop-blur-md">
       <div className="flex h-12 items-stretch">
@@ -78,6 +97,19 @@ function TopBar() {
           <Translate size={15} weight="bold" />
           {lang === 'ar' ? 'EN' : 'عربي'}
         </button>
+        {user && (
+          <button
+            onClick={() => {
+              logout()
+              navigate('/login')
+            }}
+            className="btn flex shrink-0 items-center border-s border-line px-3.5 text-ink-muted hover:bg-surface hover:text-negative"
+            aria-label={t.signOut}
+            title={t.signOut}
+          >
+            <SignOut size={16} weight="bold" />
+          </button>
+        )}
       </div>
     </div>
   )
