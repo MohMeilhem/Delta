@@ -9,3 +9,4 @@ __pycache__/
 .claude/launch.json
 attached_assets/
 .vercel/
+zipFile.zip

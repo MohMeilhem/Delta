@@ -23,7 +23,32 @@ from functools import lru_cache
 
 import numpy as np
 from pydantic import BaseModel, Field
-from sklearn.linear_model import Ridge
+
+try:
+    from sklearn.linear_model import Ridge
+except ModuleNotFoundError:
+    class Ridge:
+        """Closed-form ridge regression, numerically identical to sklearn's
+        Ridge(alpha, fit_intercept=True) for our tiny dense inputs. Used by
+        the serverless build, where sklearn is omitted to stay under the
+        function size limit (see root requirements.txt)."""
+
+        def __init__(self, alpha: float = 1.0):
+            self.alpha = alpha
+
+        def fit(self, X, y):
+            X = np.asarray(X, dtype=float)
+            y = np.asarray(y, dtype=float)
+            # sklearn centers X and y so the intercept is not penalized
+            x_mean, y_mean = X.mean(axis=0), y.mean()
+            Xc, yc = X - x_mean, y - y_mean
+            A = Xc.T @ Xc + self.alpha * np.eye(X.shape[1])
+            self.coef_ = np.linalg.solve(A, Xc.T @ yc)
+            self.intercept_ = y_mean - x_mean @ self.coef_
+            return self
+
+        def predict(self, X):
+            return np.asarray(X, dtype=float) @ self.coef_ + self.intercept_
 
 from . import data
 from .models import Company, QuarterFinancials
