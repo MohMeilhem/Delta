@@ -131,9 +131,16 @@ export default function CompanyPage() {
   }
 
   return (
-    <main className="pb-12 pt-8">
+    <main className="relative pb-12 pt-8 overflow-hidden">
+      {/* Ambient orbs */}
+      <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden>
+        <div className="orb orb-green" style={{ opacity: 0.5 }} />
+        <div className="orb orb-amber" style={{ opacity: 0.4 }} />
+        <div className="orb orb-purple" style={{ opacity: 0.3 }} />
+      </div>
+
       {/* ---- header: open ground above the deck ---- */}
-      <header className="mx-auto max-w-7xl px-6 pb-7">
+      <header className="relative z-10 mx-auto max-w-7xl px-6 pb-7">
         <nav className="mb-4 flex items-center gap-2 text-xs text-ink-faint">
           <Link to="/app" className="transition-colors hover:text-ink">
             {t.appLink}
@@ -152,7 +159,7 @@ export default function CompanyPage() {
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <div className="flex flex-wrap items-baseline gap-3">
-                  <h1 className="display text-3xl font-bold tracking-tight">{name(profile)}</h1>
+                  <h1 className="display hero-gradient-text text-3xl font-bold tracking-tight leading-[1.3]">{name(profile)}</h1>
                   <span className="num rounded-lg bg-surface-2 px-2 py-0.5 text-sm text-ink-muted">
                     {profile.ticker}
                   </span>
@@ -202,7 +209,7 @@ export default function CompanyPage() {
       </header>
 
       {/* ---- valuation deck: one tonal band holding chart, rail and readout ---- */}
-      <section className="zone">
+      <section className="zone relative z-10">
         <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-6 py-7 xl:grid-cols-[1fr_320px]">
           <div>
           <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -306,13 +313,13 @@ export default function CompanyPage() {
 
       {/* ---- analyst toolkit: open ground between the two zones ---- */}
       {assumptions && history && (
-        <section className="mx-auto max-w-7xl px-6 py-9">
+        <section className="relative z-10 mx-auto max-w-7xl px-6 py-9">
           <Toolkit ticker={ticker} assumptions={assumptions} history={history} />
         </section>
       )}
 
       {/* ---- research zone: report + news on one tonal band ---- */}
-      <section className="zone">
+      <section className="zone relative z-10">
         <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-6 py-9 xl:grid-cols-[3fr_2fr]">
           {profile && history ? (
             <ResearchReport ticker={ticker} profile={profile} history={history} />

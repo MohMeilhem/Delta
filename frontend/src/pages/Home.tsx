@@ -32,11 +32,19 @@ export default function Home() {
   }
 
   return (
-    <main className="mx-auto max-w-5xl px-6 py-12">
-      {/* masthead: asymmetric, no card */}
-      <header className="mb-12 flex flex-wrap items-end justify-between gap-6 border-b border-line pb-8">
+    <main className="relative mx-auto max-w-5xl px-6 py-12 overflow-hidden">
+      {/* Ambient orbs */}
+      <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden>
+        <div className="orb orb-green" style={{ opacity: 0.6 }} />
+        <div className="orb orb-amber" style={{ opacity: 0.5 }} />
+      </div>
+
+      {/* masthead */}
+      <header className="relative z-10 mb-12 flex flex-wrap items-end justify-between gap-6 border-b border-line pb-8">
         <div className="max-w-xl">
-          <h1 className="display text-5xl font-bold tracking-tight">{t.brand}</h1>
+          <h1 className="display hero-gradient-text text-5xl font-bold tracking-tight leading-[1.3]">
+            {t.brand}
+          </h1>
           <p className="mt-3 text-sm leading-7 text-ink-muted">{t.heroLine}</p>
         </div>
         <dl className="flex gap-8 text-start">
@@ -47,9 +55,9 @@ export default function Home() {
               [12, t.histQuarters],
             ] as [number, string][]
           ).map(([n, label]) => (
-            <div key={label}>
+            <div key={label} className="home-stat-pill">
               <dt className="text-[11px] text-ink-faint">{label}</dt>
-              <dd className="num display mt-1 text-2xl font-semibold">{n}</dd>
+              <dd className="num display mt-1 text-2xl font-semibold text-accent">{n}</dd>
             </div>
           ))}
         </dl>
@@ -58,16 +66,16 @@ export default function Home() {
       {error && <ErrorNote retry={() => window.location.reload()} />}
 
       {!sectors && !error && (
-        <div className="space-y-px">
+        <div className="relative z-10 space-y-px">
           {Array.from({ length: 9 }).map((_, i) => (
             <Skeleton key={i} className="h-16 w-full" />
           ))}
         </div>
       )}
 
-      {/* sector index: hairline rows, not cards */}
+      {/* sector index */}
       {sectors && (
-        <div className="divide-y divide-line border-y border-line">
+        <div className="relative z-10 divide-y divide-line/60 rounded-2xl border border-line/60 bg-surface/30 backdrop-blur-sm overflow-hidden shadow-[0_0_60px_oklch(0.55_0.13_163/0.06)]">
           {sectors.map((s, i) => {
             const open = active === s.id
             return (
@@ -80,7 +88,7 @@ export default function Home() {
                 <button
                   onClick={() => openSector(s.id)}
                   aria-expanded={open}
-                  className="row-hover group flex w-full items-center gap-4 px-4 py-4 text-start"
+                  className={`group flex w-full items-center gap-4 px-5 py-4 text-start transition-colors duration-200 ${open ? 'bg-accent/5' : 'hover:bg-surface/60'}`}
                 >
                   <span
                     className={`transition-colors duration-200 ${open ? 'text-accent' : 'text-ink-faint group-hover:text-accent'}`}
@@ -88,13 +96,13 @@ export default function Home() {
                     <SectorIcon id={s.id} size={22} />
                   </span>
                   <span className="flex-1">
-                    <span className="display block font-semibold">{name(s)}</span>
+                    <span className={`display block font-semibold transition-colors duration-200 ${open ? 'text-accent' : 'text-ink group-hover:text-accent'}`}>{name(s)}</span>
                     <span className="mt-0.5 block text-[11px] text-ink-faint">{altName(s)}</span>
                   </span>
                   <motion.span
                     animate={{ rotate: open ? 180 : 0 }}
                     transition={{ duration: 0.25, ease: EASE }}
-                    className="text-ink-faint"
+                    className={`transition-colors duration-200 ${open ? 'text-accent' : 'text-ink-faint'}`}
                   >
                     <CaretDown size={14} weight="bold" />
                   </motion.span>
@@ -110,7 +118,7 @@ export default function Home() {
                       transition={{ duration: 0.32, ease: EASE }}
                       className="overflow-hidden"
                     >
-                      <div className="border-t border-line/60 bg-surface/40">
+                      <div className="border-t border-accent/15 bg-accent/3">
                         {!companies[s.id] ? (
                           <div className="space-y-px p-3">
                             <Skeleton className="h-11 w-full" />
@@ -126,11 +134,11 @@ export default function Home() {
                             >
                               <Link
                                 to={`/company/${c.ticker}`}
-                                className="row-hover group/row flex items-center gap-4 py-3 pe-4 ps-14"
+                                className="group/row flex items-center gap-4 py-3 pe-5 ps-14 transition-colors duration-150 hover:bg-accent/8"
                               >
                                 <span className="num w-12 text-xs text-ink-faint">{c.ticker}</span>
                                 <span className="flex-1">
-                                  <span className="text-sm font-medium">{name(c)}</span>
+                                  <span className="text-sm font-medium transition-colors group-hover/row:text-accent">{name(c)}</span>
                                   <span className="ms-3 text-[11px] text-ink-faint">
                                     {altName(c)}
                                   </span>
@@ -143,7 +151,7 @@ export default function Home() {
                                 <Caret
                                   size={13}
                                   weight="bold"
-                                  className={`text-ink-faint opacity-0 transition-[opacity,transform] duration-200 group-hover/row:opacity-100 ${dir === 'rtl' ? 'group-hover/row:-translate-x-0.5' : 'group-hover/row:translate-x-0.5'}`}
+                                  className={`text-accent opacity-0 transition-[opacity,transform] duration-200 group-hover/row:opacity-100 ${dir === 'rtl' ? 'group-hover/row:-translate-x-0.5' : 'group-hover/row:translate-x-0.5'}`}
                                 />
                               </Link>
                             </motion.div>

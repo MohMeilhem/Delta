@@ -1,8 +1,10 @@
 node_modules/
 dist/
 .venv/
+.venv-linux/
 __pycache__/
 *.pyc
 .pytest_cache/
 .env
 .claude/launch.json
+attached_assets/
