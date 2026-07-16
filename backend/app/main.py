@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from . import anomaly, data, live, llm, prices, valuation
+from . import anomaly, data, live, llm, prices, signals, valuation
 from .anomaly import AgentReport
 from .llm import CompanyOverview, Lang, NewsSummary, ScenarioSet
 from .models import PeerRow, TapeEntry, SubscriptionRequest, SubscriptionResponse
@@ -142,9 +142,45 @@ def company_prices(ticker: str, range: prices.Range = "6m") -> prices.PriceSerie
 
 @app.get("/companies/{ticker}/live", response_model=live.LiveQuote)
 def company_live_quote(ticker: str) -> live.LiveQuote:
-    """Real Tadawul quote via Yahoo Finance; {available: false} offline."""
+    """Real Tadawul quote: SAHMK -> yfinance -> static seed, in that order.
+
+    `source` on the response says which layer actually served it
+    ("sahmk" | "yfinance" | "cache"); {available: false} only if all three
+    fail (never happens in practice — the static seed is always present).
+    """
     _company_or_404(ticker)
     return live.live_quote(ticker)
+
+
+@app.get("/market/summary", response_model=live.MarketSummary)
+def market_summary() -> live.MarketSummary:
+    """TASI index + breadth (SAHMK only; {available: false} offline — there
+    is no yfinance/static fallback for market-wide data)."""
+    return live.market_summary()
+
+
+@app.get("/health/data-sources")
+def data_sources_health() -> dict:
+    """Which layer is currently serving live quotes / market summary."""
+    return live.health()
+
+
+@app.get("/anomalies/{ticker}", response_model=signals.SignalsResponse)
+def company_signals(ticker: str) -> signals.SignalsResponse:
+    """Price/volume/fundamental Z-score flags, from yfinance only (never
+    SAHMK) — see signals.py for the source-separation rationale."""
+    _company_or_404(ticker)
+    return signals.detect_signals(ticker)
+
+
+@app.get("/anomalies/{ticker}/series", response_model=signals.SeriesResponse)
+def company_signal_series(ticker: str) -> signals.SeriesResponse:
+    """Rolling mean/+-2.5-sigma price band for chart shading; see
+    signals.signal_series's docstring for the full frontend marker/color
+    contract (amber #F4A93D medium, red #E5484D high, reserved chart colors
+    #4C6FFF/#FF7A45/#FFD166 must not be reused for anomaly elements)."""
+    _company_or_404(ticker)
+    return signals.signal_series(ticker)
 
 
 @app.get("/companies/{ticker}/technicals", response_model=prices.Technicals)

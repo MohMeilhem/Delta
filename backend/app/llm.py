@@ -32,6 +32,14 @@ from .valuation import AnalystValuationResponse, Assumptions
 MODEL = "claude-sonnet-4-6"
 FALLBACKS_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "llm_fallbacks.json"
 
+# Referenced by tests/conftest.py's autouse fixture, which points this at a
+# temp file per test run so tests never read/write the real cache on disk.
+# No reader/writer wired up yet on this module's side — stub only, so the
+# test suite (and anything that later builds the real summary cache) has a
+# stable attribute to monkeypatch.
+SUMMARY_CACHE_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "summary_cache.json"
+_summary_cache: dict | None = None
+
 Lang = Literal["ar", "en"]
 
 

@@ -5,3 +5,5 @@ pydantic
 anthropic
 pytest
 httpx
+yfinance
+python-dotenv
