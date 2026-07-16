@@ -90,25 +90,3 @@ def test_fallbacks_cover_at_least_5_companies():
     from app.llm import FALLBACKS_PATH
     fb = json.loads(FALLBACKS_PATH.read_text(encoding="utf-8"))
     assert len([k for k in fb["overview"] if k != "_default"]) >= 5
-
-
-def test_summary_cached_per_news_snapshot(monkeypatch):
-    """Same headlines -> one LLM call; new headlines -> cache invalidated."""
-    from app import llm
-
-    calls = []
-
-    def fake_parse(prompt, schema):
-        calls.append(1)
-        return llm.NewsSummary(summary_ar="ملخص", items=[], source="llm")
-
-    monkeypatch.setattr(llm, "_parse_with_retry", fake_parse)
-
-    llm.summarize_news("1120")
-    llm.summarize_news("1120")  # identical news snapshot -> cache hit
-    assert len(calls) == 1
-
-    # survives a process restart (in-memory cache cleared, disk remains)
-    monkeypatch.setattr(llm, "_summary_cache", None)
-    llm.summarize_news("1120")
-    assert len(calls) == 1

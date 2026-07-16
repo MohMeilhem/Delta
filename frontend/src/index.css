@@ -139,6 +139,11 @@ body::before {
     inset 0 1px 8px oklch(0 0 0 / 0.35),
     inset 0 0 0 1px oklch(1 0 0 / 0.015);
 }
+.screen svg,
+.screen canvas,
+.screen *:focus {
+  outline: none !important;
+}
 :root[data-theme='light'] .screen {
   background: var(--color-screen);
   border-color: var(--color-line);
@@ -307,4 +312,450 @@ input[type='range']::-moz-range-thumb {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
   }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   LANDING PAGE — rich visual layer
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── Gradient hero text ────────────────────────────────────────── */
+.hero-gradient-text {
+  display: block;
+  padding-top: 0.12em;
+  padding-bottom: 0.2em;
+  background: linear-gradient(
+    135deg,
+    oklch(0.92 0.06 170) 0%,
+    oklch(0.78 0.145 163) 35%,
+    oklch(0.83 0.13 85) 65%,
+    oklch(0.88 0.1 90) 100%
+  );
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradient-pan 6s ease-in-out infinite alternate;
+}
+@keyframes gradient-pan {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
+}
+
+/* ── Ambient background orbs ───────────────────────────────────── */
+.orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(80px);
+  will-change: transform;
+}
+.orb-green {
+  width: 700px;
+  height: 500px;
+  top: -120px;
+  inset-inline-end: -180px;
+  background: radial-gradient(
+    ellipse at 60% 40%,
+    oklch(0.55 0.13 163 / 0.18),
+    oklch(0.42 0.1 163 / 0.08) 50%,
+    transparent 75%
+  );
+  animation: orb-drift 18s ease-in-out infinite alternate;
+}
+.orb-amber {
+  width: 560px;
+  height: 420px;
+  bottom: 15%;
+  inset-inline-start: -140px;
+  background: radial-gradient(
+    ellipse at 40% 60%,
+    oklch(0.55 0.12 85 / 0.13),
+    oklch(0.45 0.09 85 / 0.06) 50%,
+    transparent 75%
+  );
+  animation: orb-drift 22s ease-in-out infinite alternate-reverse;
+}
+.orb-purple {
+  width: 400px;
+  height: 320px;
+  top: 45%;
+  inset-inline-end: 20%;
+  background: radial-gradient(
+    ellipse at 50% 50%,
+    oklch(0.48 0.12 280 / 0.09),
+    transparent 70%
+  );
+  animation: orb-drift 28s ease-in-out infinite alternate;
+}
+@keyframes orb-drift {
+  0%   { transform: translate(0, 0) scale(1); }
+  33%  { transform: translate(30px, -20px) scale(1.04); }
+  66%  { transform: translate(-20px, 15px) scale(0.97); }
+  100% { transform: translate(15px, -30px) scale(1.02); }
+}
+
+/* ── Candle float animation ────────────────────────────────────── */
+.candle-float {
+  animation: candle-bob 4s ease-in-out infinite alternate;
+  transform-origin: center bottom;
+}
+@keyframes candle-bob {
+  0%   { transform: translateY(0); }
+  100% { transform: translateY(-6px); }
+}
+
+/* ── Slow spin for sparkle icon ────────────────────────────────── */
+.animate-spin-slow {
+  animation: spin-slow 8s linear infinite;
+}
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ── Section label (01, 02 …) ──────────────────────────────────── */
+.section-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--color-accent);
+  opacity: 0.7;
+  text-transform: uppercase;
+}
+
+/* ── Stat cards ────────────────────────────────────────────────── */
+.stat-card {
+  position: relative;
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--color-line);
+  background: linear-gradient(135deg, var(--color-surface) 0%, var(--color-surface-2) 100%);
+  cursor: default;
+  overflow: hidden;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+.stat-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, oklch(0.78 0.145 163 / 0.07), transparent 60%);
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+.stat-card:hover {
+  border-color: oklch(0.78 0.145 163 / 0.35);
+  box-shadow: 0 0 24px oklch(0.78 0.145 163 / 0.12);
+}
+.stat-card:hover::before { opacity: 1; }
+
+/* ── Hero panel ────────────────────────────────────────────────── */
+.hero-panel {
+  background: linear-gradient(
+    145deg,
+    oklch(0.195 0.015 180),
+    var(--color-surface) 40%,
+    oklch(0.17 0.014 180)
+  );
+  border: 1px solid var(--color-line);
+  border-top-color: var(--color-line-strong);
+  border-radius: 20px;
+  padding: 1.5rem;
+  box-shadow:
+    0 0 0 1px oklch(1 0 0 / 0.03) inset,
+    0 24px 48px oklch(0 0 0 / 0.25),
+    0 0 80px oklch(0.78 0.145 163 / 0.06);
+}
+:root[data-theme='light'] .hero-panel {
+  background: var(--color-surface);
+  box-shadow: 0 4px 24px oklch(0.2 0.02 190 / 0.1);
+}
+
+/* ── Live badge ────────────────────────────────────────────────── */
+.live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 9999px;
+  border: 1px solid oklch(0.78 0.145 163 / 0.2);
+  background: oklch(0.78 0.145 163 / 0.08);
+  padding: 3px 10px;
+  font-size: 11px;
+  color: var(--color-accent);
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+.live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  box-shadow: 0 0 8px var(--color-accent);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.8); }
+}
+
+/* ── Mini stat cards inside hero ───────────────────────────────── */
+.mini-stat-card {
+  border-radius: 12px;
+  border: 1px solid var(--color-line);
+  padding: 1rem;
+  transition: border-color 200ms ease;
+}
+.mini-stat-card:hover {
+  border-color: oklch(0.78 0.145 163 / 0.3);
+}
+
+/* ── Problem cards ─────────────────────────────────────────────── */
+.problem-card {
+  position: relative;
+  padding: 1.5rem;
+  border-radius: 16px;
+  border: 1px solid oklch(0.69 0.17 25 / 0.15);
+  background: linear-gradient(135deg, oklch(0.69 0.17 25 / 0.05) 0%, var(--color-surface) 50%, var(--color-surface-2) 100%);
+  overflow: hidden;
+  cursor: default;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+.problem-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  inset-inline-start: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, oklch(0.69 0.17 25 / 0.6), oklch(0.69 0.17 25 / 0.2), transparent);
+}
+.problem-card:hover {
+  border-color: oklch(0.69 0.17 25 / 0.3);
+  box-shadow: 0 0 24px oklch(0.69 0.17 25 / 0.1);
+}
+
+/* ── Step cards ────────────────────────────────────────────────── */
+.step-card {
+  position: relative;
+  padding: 1.5rem;
+  border-radius: 16px;
+  border: 1px solid var(--color-line);
+  background: linear-gradient(135deg, var(--color-surface) 0%, var(--color-surface-2) 100%);
+  overflow: hidden;
+  cursor: default;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+.step-card:hover {
+  border-color: oklch(0.78 0.145 163 / 0.35);
+  box-shadow: 0 0 32px oklch(0.78 0.145 163 / 0.1);
+}
+.step-number {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  font-weight: 800;
+  line-height: 1;
+  background: linear-gradient(135deg, var(--color-accent), oklch(0.83 0.13 85));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.connector-dot {
+  position: absolute;
+  top: 50%;
+  inset-inline-end: -8px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  border: 2px solid var(--color-bg);
+  box-shadow: 0 0 10px oklch(0.78 0.145 163 / 0.5);
+  transform: translateY(-50%);
+}
+
+/* ── Feature block (differentiators / AI layers) ───────────────── */
+.feature-block {
+  position: relative;
+  padding: 2rem;
+  border-radius: 20px;
+  border: 1px solid var(--color-line);
+  background: linear-gradient(135deg, var(--color-surface) 0%, var(--color-surface-2) 100%);
+  overflow: hidden;
+}
+
+/* ── Feature rows (check items) ────────────────────────────────── */
+.feature-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+  border-radius: 12px;
+  border: 1px solid var(--color-line);
+  background: oklch(1 0 0 / 0.02);
+  padding: 0.875rem 1rem;
+  transition: border-color 180ms ease, background 180ms ease;
+  cursor: default;
+}
+.feature-row:hover {
+  border-color: oklch(0.78 0.145 163 / 0.25);
+  background: oklch(0.78 0.145 163 / 0.04);
+}
+
+/* ── AI layer cards ─────────────────────────────────────────────── */
+.ai-layer-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+  border-radius: 12px;
+  border: 1px solid oklch(0.83 0.13 85 / 0.18);
+  background: linear-gradient(135deg, oklch(0.83 0.13 85 / 0.06), var(--color-surface));
+  padding: 1rem;
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+  cursor: default;
+}
+.ai-layer-card:hover {
+  border-color: oklch(0.83 0.13 85 / 0.4);
+  box-shadow: 0 0 20px oklch(0.83 0.13 85 / 0.1);
+}
+
+/* ── Pricing cards ──────────────────────────────────────────────── */
+.pricing-card {
+  position: relative;
+  padding: 1.75rem;
+  border-radius: 20px;
+  border: 1px solid var(--color-line);
+  background: linear-gradient(145deg, var(--color-surface), var(--color-surface-2));
+  overflow: hidden;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+.pricing-card:hover {
+  border-color: oklch(0.78 0.145 163 / 0.3);
+  box-shadow: 0 8px 40px oklch(0 0 0 / 0.18), 0 0 40px oklch(0.78 0.145 163 / 0.08);
+}
+.pricing-card-highlighted {
+  border-color: oklch(0.78 0.145 163 / 0.5) !important;
+  background: linear-gradient(145deg, oklch(0.78 0.145 163 / 0.08), var(--color-surface) 60%, var(--color-surface-2));
+  box-shadow:
+    0 0 0 1px oklch(0.78 0.145 163 / 0.2) inset,
+    0 12px 48px oklch(0 0 0 / 0.22),
+    0 0 48px oklch(0.78 0.145 163 / 0.12);
+}
+.pricing-card-highlighted::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--color-accent), oklch(0.83 0.13 85), var(--color-accent), transparent);
+}
+.popular-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  border-radius: 9999px;
+  border: 1px solid oklch(0.78 0.145 163 / 0.3);
+  background: oklch(0.78 0.145 163 / 0.12);
+  padding: 2px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-accent);
+}
+
+/* ── Pricing buttons ────────────────────────────────────────────── */
+.pricing-btn {
+  display: block;
+  width: 100%;
+  border-radius: 12px;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-align: center;
+  transition: opacity 160ms ease, box-shadow 160ms ease;
+}
+.pricing-btn-primary {
+  background: linear-gradient(135deg, var(--color-accent), oklch(0.65 0.13 163));
+  color: var(--color-bg);
+  box-shadow: 0 0 24px oklch(0.78 0.145 163 / 0.3);
+}
+.pricing-btn-primary:hover {
+  box-shadow: 0 0 36px oklch(0.78 0.145 163 / 0.5);
+  opacity: 0.95;
+}
+.pricing-btn-outline {
+  border: 1px solid var(--color-line);
+  color: var(--color-ink);
+  background: var(--color-surface);
+  transition: border-color 160ms ease, background 160ms ease;
+}
+.pricing-btn-outline:hover {
+  border-color: oklch(0.78 0.145 163 / 0.3);
+  background: var(--color-surface-2);
+}
+
+/* ── CTA / form block ───────────────────────────────────────────── */
+.cta-block {
+  position: relative;
+  padding: 2.5rem;
+  border-radius: 24px;
+  border: 1px solid var(--color-line);
+  background: linear-gradient(135deg, var(--color-surface), var(--color-surface-2));
+  overflow: hidden;
+}
+
+/* ── Form input ────────────────────────────────────────────────── */
+.form-input {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid var(--color-line);
+  background: var(--color-surface-2);
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+  color: var(--color-ink);
+  outline: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+.form-input:focus {
+  border-color: oklch(0.78 0.145 163 / 0.5);
+  box-shadow: 0 0 0 3px oklch(0.78 0.145 163 / 0.12);
+}
+.form-input::placeholder { color: var(--color-ink-faint); }
+
+/* ── Light-theme overrides ──────────────────────────────────────── */
+:root[data-theme='light'] .hero-gradient-text {
+  background: linear-gradient(
+    135deg,
+    oklch(0.3 0.1 170) 0%,
+    oklch(0.45 0.13 163) 35%,
+    oklch(0.52 0.12 80) 65%,
+    oklch(0.4 0.1 90) 100%
+  );
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradient-pan 6s ease-in-out infinite alternate;
+}
+:root[data-theme='light'] .orb-green {
+  background: radial-gradient(ellipse at 60% 40%, oklch(0.72 0.09 163 / 0.12), transparent 70%);
+}
+:root[data-theme='light'] .orb-amber {
+  background: radial-gradient(ellipse at 40% 60%, oklch(0.7 0.1 85 / 0.09), transparent 70%);
+}
+:root[data-theme='light'] .stat-card {
+  background: linear-gradient(135deg, var(--color-surface), oklch(0.94 0.006 175));
+}
+:root[data-theme='light'] .problem-card {
+  background: linear-gradient(135deg, oklch(0.55 0.19 25 / 0.04) 0%, var(--color-surface) 60%);
+}
+:root[data-theme='light'] .step-card,
+:root[data-theme='light'] .feature-block,
+:root[data-theme='light'] .pricing-card,
+:root[data-theme='light'] .cta-block {
+  background: var(--color-surface);
+  box-shadow: 0 2px 12px oklch(0.2 0.02 190 / 0.06);
+}
+:root[data-theme='light'] .pricing-card-highlighted {
+  background: linear-gradient(145deg, oklch(0.52 0.13 163 / 0.06), var(--color-surface));
+  box-shadow: 0 4px 24px oklch(0.2 0.02 190 / 0.12), 0 0 0 1px oklch(0.52 0.13 163 / 0.25) inset;
+}
+:root[data-theme='light'] .form-input {
+  background: oklch(0.97 0.004 175);
 }

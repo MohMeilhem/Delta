@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from pydantic import BaseModel
+from typing import Literal
+
+from pydantic import BaseModel, Field, field_validator
 
 
 class Sector(BaseModel):
@@ -23,7 +25,7 @@ class Company(BaseModel):
     ceo_since: int
     ceo_experience_years: int
     founded: int
-    employees: int | None = None  # None = no verified figure available
+    employees: int
     hq_ar: str
     hq_en: str
 
@@ -56,7 +58,6 @@ class NewsItem(BaseModel):
     date: str
     body: str
     source: str
-    url: str | None = None  # live items link to the article; seed items don't
 
 
 class TapeEntry(BaseModel):
@@ -80,3 +81,33 @@ class PeerRow(BaseModel):
     net_margin: float
     revenue_yoy: float
     is_self: bool
+
+
+class SubscriptionRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    email: str = Field(min_length=5, max_length=254)
+    company: str = Field(min_length=1, max_length=160)
+
+    @field_validator("name", "company")
+    @classmethod
+    def _strip_required(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("must not be empty")
+        return value
+
+    @field_validator("email")
+    @classmethod
+    def _validate_email(cls, value: str) -> str:
+        value = value.strip().lower()
+        if "@" not in value or value.startswith("@") or value.endswith("@"):
+            raise ValueError("invalid email")
+        local, domain = value.split("@", 1)
+        if not local or not domain or "." not in domain or domain.startswith(".") or domain.endswith("."):
+            raise ValueError("invalid email")
+        return value
+
+
+class SubscriptionResponse(BaseModel):
+    status: Literal["created", "duplicate"]
+    message: str

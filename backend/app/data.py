@@ -9,6 +9,7 @@ from pathlib import Path
 from .models import Company, NewsItem, QuarterFinancials, Sector
 
 DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
+SUBSCRIBERS_PATH = DATA_DIR / "subscribers.json"
 
 
 @lru_cache(maxsize=1)
@@ -56,7 +57,13 @@ def news(ticker: str) -> list[NewsItem] | None:
     return [NewsItem(**i) for i in items]
 
 
-@lru_cache(maxsize=1)
-def macro() -> dict:
-    """Saudi macro series (Brent, SAMA repo) aligned to the seed quarters."""
-    return json.loads((DATA_DIR / "macro.json").read_text(encoding="utf-8"))
+def subscribers() -> list[dict]:
+    if not SUBSCRIBERS_PATH.exists():
+        return []
+    return json.loads(SUBSCRIBERS_PATH.read_text(encoding="utf-8"))
+
+
+def append_subscriber(entry: dict) -> None:
+    rows = subscribers()
+    rows.append(entry)
+    SUBSCRIBERS_PATH.write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")

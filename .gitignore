@@ -1,13 +1,10 @@
 node_modules/
 dist/
 .venv/
+.venv-linux/
 __pycache__/
 *.pyc
 .pytest_cache/
 .env
 .claude/launch.json
-.claude/scheduled_tasks.lock
-data/news_cache.json
-data/summary_cache.json
-
-.vercel
+attached_assets/

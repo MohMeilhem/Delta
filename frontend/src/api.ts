@@ -37,7 +37,7 @@ export interface CompanyProfile extends Company {
   ceo_since: number
   ceo_experience_years: number
   founded: number
-  employees: number | null
+  employees: number
   hq_ar: string
   hq_en: string
   market_cap: number
@@ -150,7 +150,6 @@ export interface NewsItem {
   date: string
   body: string
   source: string
-  url?: string | null // live items link to the article; seed items don't
 }
 
 export interface Assumptions {
@@ -255,30 +254,15 @@ export interface ScenarioSet {
   source: 'llm' | 'fallback'
 }
 
-export interface ChatTurn {
-  role: 'user' | 'assistant'
-  content: string
+export interface SubscribeRequest {
+  name: string
+  email: string
+  company: string
 }
 
-export interface AssumptionRating {
-  parameter: 'revenue_growth' | 'net_margin' | 'discount_rate' | 'terminal_growth'
-  verdict: 'conservative' | 'balanced' | 'aggressive'
-  note_ar: string
-}
-
-export interface ChatReply {
-  reply_ar: string
-  key_numbers_ar: string[]
-  follow_ups_ar: string[]
-  // report card on the user's current slider values (when they ask for one)
-  assumption_ratings: AssumptionRating[] | null
-  // scenario proposal: assumptions the agent suggests applying to the model;
-  // fair value / upside are computed server-side by the valuation engine
-  proposed_assumptions: Assumptions | null
-  proposed_label_ar: string | null
-  proposed_fair_value: number | null
-  proposed_upside_pct: number | null
-  source: 'llm' | 'fallback'
+export interface SubscribeResponse {
+  status: 'created' | 'duplicate'
+  message: string
 }
 
 async function get<T>(path: string): Promise<T> {
@@ -320,6 +304,5 @@ export const api = {
     get<NewsSummary>(`/companies/${t}/news-summary?lang=${lang}`),
   scenarios: (t: string, a: Assumptions, lang: string) =>
     post<ScenarioSet>(`/companies/${t}/scenarios?lang=${lang}`, a),
-  chat: (t: string, messages: ChatTurn[], assumptions: Assumptions | null, lang: string) =>
-    post<ChatReply>(`/companies/${t}/chat`, { messages, assumptions, lang }),
+  subscribe: (payload: SubscribeRequest) => post<SubscribeResponse>('/subscribe', payload),
 }

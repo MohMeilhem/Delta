@@ -1,50 +1,15 @@
-import asyncio
-import contextlib
-import os
-
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from . import anomaly, chat, data, live, live_news, llm, prices, valuation
+from . import anomaly, data, live, llm, prices, valuation
 from .anomaly import AgentReport
-from .chat import ChatReply, ChatRequest
 from .llm import CompanyOverview, Lang, NewsSummary, ScenarioSet
-from .models import PeerRow, TapeEntry
+from .models import PeerRow, TapeEntry, SubscriptionRequest, SubscriptionResponse
 from .valuation import SensitivityResponse
 from .models import Company, CompanyProfile, NewsItem, QuarterFinancials, Sector
 from .valuation import AnalystValuationResponse, Assumptions, BaselineResponse
 
-async def _daily_news_refresh() -> None:
-    """Warm the live-news cache for all companies, then repeat every 24h.
-
-    live_news itself serves fresh cache entries without refetching, so this
-    loop is cheap when the cache is already warm (e.g. after --reload).
-    """
-    while True:
-        n, total = 0, len(data.companies())
-        try:
-            n = await asyncio.to_thread(live_news.refresh_all, data.companies())
-            print(f"[live-news] daily refresh: {n}/{total} tickers live")
-        except Exception as exc:  # never let the refresher kill the app
-            print(f"[live-news] refresh failed: {exc}")
-        # Self-healing: when tickers were missed (rate limiting, transient
-        # network), retry after the per-ticker backoff expires instead of
-        # leaving them on seed news until tomorrow. Fresh cache entries are
-        # served without refetching, so the retry only touches the misses.
-        await asyncio.sleep(24 * 60 * 60 if n >= total else 30 * 60)
-
-
-@contextlib.asynccontextmanager
-async def _lifespan(app: FastAPI):
-    task = None
-    if not os.environ.get("DELTA_OFFLINE"):  # set DELTA_OFFLINE=1 to skip
-        task = asyncio.create_task(_daily_news_refresh())
-    yield
-    if task:
-        task.cancel()
-
-
-app = FastAPI(title="Delta — Tadawul Equity Research API", lifespan=_lifespan)
+app = FastAPI(title="Delta — Tadawul Equity Research API")
 
 app.add_middleware(
     CORSMiddleware,
@@ -57,15 +22,7 @@ app.add_middleware(
 
 @app.get("/health")
 def health() -> dict:
-    return {
-        "status": "ok",
-        "service": "delta-backend",
-        # "live" = ANTHROPIC_API_KEY set, LLM endpoints generate via Claude;
-        # "fallback" = no key, cached sample outputs are served instead.
-        "llm": "live" if llm._client() is not None else "fallback",
-        # news freshness: fetch stamps prove the daily refresh is running
-        "news": live_news.cache_status(),
-    }
+    return {"status": "ok", "service": "delta-backend"}
 
 
 @app.get("/sectors", response_model=list[Sector])
@@ -78,6 +35,29 @@ def list_sector_companies(sector_id: str) -> list[Company]:
     if sector_id not in {s.id for s in data.sectors()}:
         raise HTTPException(404, f"unknown sector: {sector_id}")
     return data.companies_by_sector(sector_id)
+
+
+@app.post("/subscribe", response_model=SubscriptionResponse)
+def subscribe(payload: SubscriptionRequest) -> SubscriptionResponse:
+    email = payload.email.lower()
+    existing = next((row for row in data.subscribers() if row.get("email", "").lower() == email), None)
+    if existing:
+        return SubscriptionResponse(
+            status="duplicate",
+            message="هذا البريد مسجل بالفعل، وسنتواصل معك عبر الطلب السابق.",
+        )
+
+    data.append_subscriber(
+        {
+            "name": payload.name,
+            "email": email,
+            "company": payload.company,
+        },
+    )
+    return SubscriptionResponse(
+        status="created",
+        message="تم استلام طلبك بنجاح. سنرسل لك تفاصيل الوصول المبكر قريباً.",
+    )
 
 
 def _company_or_404(ticker: str) -> Company:
@@ -133,9 +113,8 @@ def company_financials(ticker: str) -> list[QuarterFinancials]:
 
 @app.get("/companies/{ticker}/news", response_model=list[NewsItem])
 def company_news(ticker: str) -> list[NewsItem]:
-    """Live Arabic headlines (daily-refreshed cache); seed news offline."""
-    c = _company_or_404(ticker)
-    return live_news.company_news(c) or data.news(ticker) or []
+    _company_or_404(ticker)
+    return data.news(ticker) or []
 
 
 @app.get("/companies/{ticker}/baseline", response_model=BaselineResponse)
@@ -223,9 +202,3 @@ def company_news_summary(ticker: str, lang: Lang = "ar") -> NewsSummary:
 def company_scenarios(ticker: str, assumptions: Assumptions, lang: Lang = "ar") -> ScenarioSet:
     _company_or_404(ticker)
     return llm.generate_scenarios(ticker, assumptions, lang)
-
-
-@app.post("/companies/{ticker}/chat", response_model=ChatReply)
-def company_chat(ticker: str, req: ChatRequest) -> ChatReply:
-    """Analyst chat agent: voice a worry, get a data-grounded answer."""
-    return chat.respond(_company_or_404(ticker), req)

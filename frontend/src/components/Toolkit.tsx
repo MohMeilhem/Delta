@@ -7,14 +7,13 @@ import type {
   PeerRow,
   QuarterFinancials,
   SensitivityResponse,
-  Technicals,
 } from '../api'
-import { fmt, fmtDate, fmtMillions, fmtPct, fmtQuarter } from '../format'
+import { fmt, fmtMillions, fmtPct, fmtQuarter } from '../format'
 import { useLang } from '../i18n'
 import { useChartColors } from '../theme'
 import { EASE, Skeleton } from './ui'
 
-type Tab = 'sensitivity' | 'technicals' | 'peers' | 'quarterlies'
+type Tab = 'sensitivity' | 'peers' | 'quarterlies'
 
 export default function Toolkit({
   ticker,
@@ -38,14 +37,12 @@ export default function Toolkit({
 
   const tabs: [Tab, string][] = [
     ['sensitivity', t.sensitivity],
-    ['technicals', t.technicals],
     ['peers', t.peers],
     ['quarterlies', t.quarterlies],
   ]
 
   const panels: Record<Tab, React.ReactNode> = {
     sensitivity: <SensitivityHeatmap ticker={ticker} assumptions={assumptions} />,
-    technicals: <TechnicalsGauge ticker={ticker} />,
     peers: <PeersTable ticker={ticker} />,
     quarterlies: <QuarterliesTable history={history} />,
   }
@@ -183,131 +180,9 @@ function SensitivityHeatmap({ ticker, assumptions }: { ticker: string; assumptio
 }
 
 /* ------------------------------------------------------------------ */
-/* Technical analysis: gauge + indicator battery                        */
-/* ------------------------------------------------------------------ */
-
-const SIGNAL_CLS: Record<string, string> = {
-  buy: 'border-accent-dim text-accent',
-  sell: 'border-negative/40 text-negative',
-  neutral: 'border-line text-ink-muted',
-}
-
-function TechnicalsGauge({ ticker }: { ticker: string }) {
-  const [data, setData] = useState<Technicals | null>(null)
-  const { t, dir } = useLang()
-  const cc = useChartColors()
-  const RATING_COLOR = cc.ratings
-  const reduce = useReducedMotion()
-
-  useEffect(() => {
-    let live = true
-    setData(null)
-    api.technicals(ticker).then((d) => live && setData(d)).catch(() => {})
-    return () => {
-      live = false
-    }
-  }, [ticker])
-
-  if (!data) return <Skeleton className="h-56 w-full" />
-
-  const angle = data.score * 82 // -82°..82° needle sweep
-  const color = RATING_COLOR[data.rating]
-
-  return (
-    <div className="grid grid-cols-1 items-center gap-6 lg:grid-cols-[280px_1fr]">
-      {/* the gauge */}
-      <div className="mx-auto w-64">
-        <svg viewBox="0 0 200 118" className="w-full">
-          {/* five rating arcs */}
-          {[
-            ['strong_sell', -90, -54],
-            ['sell', -54, -18],
-            ['neutral', -18, 18],
-            ['buy', 18, 54],
-            ['strong_buy', 54, 90],
-          ].map(([key, a0, a1]) => (
-            <path
-              key={key as string}
-              d={arcPath(100, 100, 78, a0 as number, a1 as number)}
-              fill="none"
-              stroke={RATING_COLOR[key as string]}
-              strokeOpacity={data.rating === key ? 0.9 : 0.22}
-              strokeWidth={11}
-              strokeLinecap="butt"
-            />
-          ))}
-          {/* needle: spring-rotates to the score */}
-          <motion.g
-            initial={reduce ? false : { rotate: -82 }}
-            animate={{ rotate: angle }}
-            transition={{ type: 'spring', duration: 1.1, bounce: 0.25 }}
-            style={{ originX: '100px', originY: '100px' }}
-          >
-            <line x1="100" y1="100" x2="100" y2="34" stroke={color} strokeWidth="2.5" strokeLinecap="round" />
-          </motion.g>
-          <circle cx="100" cy="100" r="5" fill={color} />
-        </svg>
-        <div className="mt-1 text-center">
-          <div className="display text-lg font-bold" style={{ color }}>
-            {t.techRatings[data.rating]}
-          </div>
-          <div className="num mt-0.5 text-[10px] text-ink-faint">
-            {data.score > 0 ? '+' : ''}
-            {data.score} · {fmtDate(data.as_of)}
-          </div>
-        </div>
-      </div>
-
-      {/* indicator battery */}
-      <div className="overflow-x-auto" dir={dir}>
-        <table className="w-full text-xs">
-          <thead>
-            <tr className="text-[10px] text-ink-faint">
-              <th className="pb-2 pe-4 text-start font-normal">{t.indicator}</th>
-              <th className="pb-2 pe-4 text-end font-normal">{t.value}</th>
-              <th className="pb-2 pe-4 text-end font-normal">{t.reference}</th>
-              <th className="pb-2 text-end font-normal">{t.signal}</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-line/60">
-            {data.indicators.map((ind, i) => (
-              <motion.tr
-                key={ind.name}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.25, delay: i * 0.05 }}
-              >
-                <td className="py-2.5 pe-4">{t.techNames[ind.name] ?? ind.name}</td>
-                <td className="num py-2.5 pe-4 text-end">{fmt(ind.value)}</td>
-                <td className="num py-2.5 pe-4 text-end text-ink-faint">
-                  {ind.reference != null ? fmt(ind.reference) : '-'}
-                </td>
-                <td className="py-2.5 text-end">
-                  <span className={`rounded-full border px-2 py-0.5 text-[10px] ${SIGNAL_CLS[ind.signal]}`}>
-                    {t.techSignals[ind.signal]}
-                  </span>
-                </td>
-              </motion.tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  )
-}
-
-function arcPath(cx: number, cy: number, r: number, a0: number, a1: number): string {
-  const rad = (a: number) => ((a - 90) * Math.PI) / 180
-  const x0 = cx + r * Math.cos(rad(a0))
-  const y0 = cy + r * Math.sin(rad(a0))
-  const x1 = cx + r * Math.cos(rad(a1))
-  const y1 = cy + r * Math.sin(rad(a1))
-  return `M ${x0} ${y0} A ${r} ${r} 0 0 1 ${x1} ${y1}`
-}
-
-/* ------------------------------------------------------------------ */
 /* Peer comparison                                                      */
 /* ------------------------------------------------------------------ */
+
 
 function PeersTable({ ticker }: { ticker: string }) {
   const [peers, setPeers] = useState<PeerRow[] | null>(null)

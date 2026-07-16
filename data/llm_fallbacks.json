@@ -2,7 +2,7 @@
   "overview": {
     "_default_en": {
       "overview_ar": "{name_en} is a prominent company in the {sector_en} sector of the Saudi Exchange. In the latest quarter it reported {income_label_en} of SAR {revenue} million and net income of SAR {net_income} million. Net margin stands at {net_margin}% with year-on-year growth of {yoy_growth}%.",
-      "ceo_note_ar": "The company is led by {ceo_en}, chief executive since {ceo_since}, bringing more than {ceo_exp} years of sector experience. Founded in {founded}, it operates from its {hq_en} headquarters.",
+      "ceo_note_ar": "The company is led by {ceo_en}, chief executive since {ceo_since}, bringing more than {ceo_exp} years of sector experience. Founded in {founded}, it employs roughly {employees} people from its {hq_en} headquarters.",
       "strengths_ar": [
         "Established competitive position in the Saudi {sector_en} sector",
         "Net margin of {net_margin}% reflecting operating efficiency",

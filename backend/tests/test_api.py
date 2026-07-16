@@ -1,5 +1,6 @@
 from fastapi.testclient import TestClient
 
+from app import data
 from app.main import app
 
 client = TestClient(app)
@@ -79,3 +80,27 @@ def test_all_33_companies_have_profiles():
         for c in companies:
             assert client.get(f"/companies/{c['ticker']}").status_code == 200
     assert total == 33
+
+
+def test_subscribe_valid_invalid_and_duplicate(tmp_path, monkeypatch):
+    monkeypatch.setattr(data, "DATA_DIR", tmp_path)
+    monkeypatch.setattr(data, "SUBSCRIBERS_PATH", tmp_path / "subscribers.json")
+    data.SUBSCRIBERS_PATH.write_text("[]", encoding="utf-8")
+
+    payload = {
+        "name": "Maha Alqahtani",
+        "email": "maha@research.sa",
+        "company": "Delta Capital",
+    }
+    first = client.post("/subscribe", json=payload)
+    assert first.status_code == 200
+    assert first.json()["status"] == "created"
+    assert len(data.subscribers()) == 1
+
+    duplicate = client.post("/subscribe", json=payload)
+    assert duplicate.status_code == 200
+    assert duplicate.json()["status"] == "duplicate"
+    assert len(data.subscribers()) == 1
+
+    invalid = client.post("/subscribe", json={**payload, "email": "not-an-email"})
+    assert invalid.status_code == 422

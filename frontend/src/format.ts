@@ -1,5 +1,5 @@
-// Locale-aware number/SAR formatting. Latin digits in both languages
-// (Tadawul convention); unit words and percent sign follow the language.
+// Locale-aware number/SAR formatting. Arabic uses Arabic-Indic digits;
+// English keeps Latin digits. Unit words and percent sign follow the language.
 
 type Lang = 'ar' | 'en'
 
@@ -10,15 +10,15 @@ export function setFormatLang(l: Lang) {
 }
 
 const NF: Record<Lang, Intl.NumberFormat> = {
-  ar: new Intl.NumberFormat('ar-SA-u-nu-latn', { maximumFractionDigits: 2 }),
+  ar: new Intl.NumberFormat('ar-SA-u-nu-arab', { maximumFractionDigits: 2 }),
   en: new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }),
 }
 const NF1: Record<Lang, Intl.NumberFormat> = {
-  ar: new Intl.NumberFormat('ar-SA-u-nu-latn', { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
+  ar: new Intl.NumberFormat('ar-SA-u-nu-arab', { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
   en: new Intl.NumberFormat('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
 }
 const NF0: Record<Lang, Intl.NumberFormat> = {
-  ar: new Intl.NumberFormat('ar-SA-u-nu-latn', { maximumFractionDigits: 0 }),
+  ar: new Intl.NumberFormat('ar-SA-u-nu-arab', { maximumFractionDigits: 0 }),
   en: new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }),
 }
 
@@ -54,11 +54,11 @@ export function fmtPct(v: number, signed = false): string {
 
 const DF: Record<Lang, Intl.DateTimeFormat> = {
   // force Gregorian: ar-SA defaults to the Islamic calendar
-  ar: new Intl.DateTimeFormat('ar-SA-u-nu-latn-ca-gregory', { day: 'numeric', month: 'short', year: '2-digit' }),
+  ar: new Intl.DateTimeFormat('ar-SA-u-nu-arab-ca-gregory', { day: 'numeric', month: 'short', year: '2-digit' }),
   en: new Intl.DateTimeFormat('en-US', { day: 'numeric', month: 'short', year: '2-digit' }),
 }
 const DF_SHORT: Record<Lang, Intl.DateTimeFormat> = {
-  ar: new Intl.DateTimeFormat('ar-SA-u-nu-latn-ca-gregory', { month: 'short', year: '2-digit' }),
+  ar: new Intl.DateTimeFormat('ar-SA-u-nu-arab-ca-gregory', { month: 'short', year: '2-digit' }),
   en: new Intl.DateTimeFormat('en-US', { month: 'short', year: '2-digit' }),
 }
 

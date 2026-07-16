@@ -23,26 +23,7 @@ from functools import lru_cache
 
 import numpy as np
 from pydantic import BaseModel, Field
-try:
-    from sklearn.linear_model import Ridge
-except ImportError:  # serverless deploys omit sklearn to stay under size limits
-    class Ridge:  # closed-form equivalent of sklearn Ridge (unpenalized intercept)
-        def __init__(self, alpha: float = 1.0):
-            self.alpha = alpha
-
-        def fit(self, X, y):
-            X = np.asarray(X, dtype=float)
-            y = np.asarray(y, dtype=float)
-            self._x_mean = X.mean(axis=0)
-            self._y_mean = y.mean()
-            Xc = X - self._x_mean
-            A = Xc.T @ Xc + self.alpha * np.eye(X.shape[1])
-            self.coef_ = np.linalg.solve(A, Xc.T @ (y - self._y_mean))
-            self.intercept_ = self._y_mean - self._x_mean @ self.coef_
-            return self
-
-        def predict(self, X):
-            return np.asarray(X, dtype=float) @ self.coef_ + self.intercept_
+from sklearn.linear_model import Ridge
 
 from . import data
 from .models import Company, QuarterFinancials

@@ -127,14 +127,8 @@ export function ResearchReport({
               {t.hq} <span className="text-ink-muted">{hq}</span>
             </span>
             <span>
-              {profile.employees != null ? (
-                <>
-                  <span className="num text-ink-muted">{fmtInt(profile.employees)}</span>{' '}
-                  {t.employees}
-                </>
-              ) : (
-                t.noInfoEmployees
-              )}
+              <span className="num text-ink-muted">{fmtInt(profile.employees)}</span>{' '}
+              {t.employees}
             </span>
             <span className="flex items-center gap-1.5">
               <ChartLineUp size={13} />
@@ -380,25 +374,11 @@ export function NewsSummaryCard({ ticker }: { ticker: string }) {
                       transition={{ duration: 0.25, ease: EASE }}
                       className="overflow-hidden"
                     >
-                      {full.body && (
-                        <p dir="rtl" className="mt-2 text-[12px] leading-6 text-ink-faint">
-                          {full.body}
-                        </p>
-                      )}
+                      <p dir="rtl" className="mt-2 text-[12px] leading-6 text-ink-faint">
+                        {full.body}
+                      </p>
                       <div className="mt-1.5 text-[10px] text-ink-faint">
-                        {full.url ? (
-                          <a
-                            href={full.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="underline decoration-line underline-offset-2 hover:text-ink"
-                          >
-                            {full.source}
-                          </a>
-                        ) : (
-                          full.source
-                        )}{' '}
-                        · {fmtDate(full.date)}
+                        {full.source} · {fmtDate(full.date)}
                       </div>
                     </motion.div>
                   )}

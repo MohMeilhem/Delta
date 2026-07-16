@@ -77,7 +77,7 @@ co("1180", "البنك الأهلي السعودي", "Saudi National Bank", "ban
    rev0=8700, nm=0.55, gm=0.78, growth=0.015, season=0.01, vol=0.015,
    shares=6000, debt_ratio=4.5, sukuk_share=0.35, price0=36)
 co("1150", "مصرف الإنماء", "Alinma Bank", "banks",
-   "مصرف سعودي متوافق بالكامل مع أحكام الشريعة تأسس عام 2006 ومقره الرياض، يقدم خدمات مصرفية للأفراد والشركات مع تركيز واضح على الخدمات الرقمية، وهو من أسرع المصارف السعودية نمواً في الأرباح خلال السنوات الأخيرة.",
+   "مصرف إسلامي سعودي سريع النمو يركز على الخدمات الرقمية والتمويل المتوافق مع الشريعة.",
    islamic=True, sukuk=True,
    rev0=2900, nm=0.45, gm=0.75, growth=0.028, season=0.01, vol=0.02,
    shares=2500, debt_ratio=3.5, sukuk_share=0.9, price0=27)
@@ -497,9 +497,7 @@ def gen_news(c: dict) -> list[dict]:
 LEADERSHIP = {
     "1120": ("وليد المقبل", "Waleed Al-Mogbel", 2021, 24, 1957, 20800, "الرياض", "Riyadh"),
     "1180": ("طارق السدحان", "Tareq Al-Sadhan", 2023, 26, 1953, 18400, "الرياض", "Riyadh"),
-    # employees=None: no verified public figure — the UI shows a "no verified
-    # information" note instead of a made-up number.
-    "1150": ("عبدالله الخليفة", "Abdullah Al-Khalifa", 2021, 30, 2006, None, "الرياض", "Riyadh"),
+    "1150": ("عبدالله الخليفة", "Abdullah Al-Khalifa", 2020, 27, 2006, 4200, "الرياض", "Riyadh"),
     "1010": ("نادر الكثيري", "Nader Al-Kathiri", 2022, 23, 1957, 6100, "الرياض", "Riyadh"),
     "1140": ("عبدالعزيز العنيزان", "Abdulaziz Al-Onaizan", 2016, 30, 2004, 4600, "الرياض", "Riyadh"),
     "2222": ("أمين الناصر", "Amin Nasser", 2015, 42, 1933, 73000, "الظهران", "Dhahran"),
