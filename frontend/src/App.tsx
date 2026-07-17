@@ -5,6 +5,7 @@ import { Moon, Sun, Translate } from '@phosphor-icons/react'
 import Landing from './pages/Landing'
 import Home from './pages/Home'
 import CompanyPage from './pages/CompanyPage'
+import InstallPrompt from './components/InstallPrompt'
 import { api } from './api'
 import type { TapeEntry } from './api'
 import { LangProvider, useLang } from './i18n'
@@ -19,6 +20,7 @@ export default function App() {
         <BrowserRouter>
           <TopBar />
           <AnimatedRoutes />
+          <InstallPrompt />
         </BrowserRouter>
       </LangProvider>
     </ThemeProvider>
