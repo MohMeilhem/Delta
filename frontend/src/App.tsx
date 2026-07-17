@@ -5,8 +5,6 @@ import { Moon, Sun, Translate } from '@phosphor-icons/react'
 import Landing from './pages/Landing'
 import Home from './pages/Home'
 import CompanyPage from './pages/CompanyPage'
-import Login from './pages/Login'
-import { AuthProvider, RequireAuth } from './auth'
 import { api } from './api'
 import type { TapeEntry } from './api'
 import { LangProvider, useLang } from './i18n'
@@ -18,12 +16,10 @@ export default function App() {
   return (
     <ThemeProvider>
       <LangProvider>
-        <AuthProvider>
-          <BrowserRouter>
-            <TopBar />
-            <AnimatedRoutes />
-          </BrowserRouter>
-        </AuthProvider>
+        <BrowserRouter>
+          <TopBar />
+          <AnimatedRoutes />
+        </BrowserRouter>
       </LangProvider>
     </ThemeProvider>
   )
@@ -43,11 +39,9 @@ function AnimatedRoutes() {
       >
         <Routes location={location}>
           <Route path="/" element={<Landing />} />
-          <Route path="/login" element={<Login />} />
-          <Route element={<RequireAuth />}>
-            <Route path="/app" element={<Home />} />
-            <Route path="/company/:ticker" element={<CompanyPage />} />
-          </Route>
+          {/* open demo — no auth gate; every page is public */}
+          <Route path="/app" element={<Home />} />
+          <Route path="/company/:ticker" element={<CompanyPage />} />
           {/* unknown paths land on the landing page, never a blank screen */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
