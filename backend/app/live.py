@@ -20,6 +20,7 @@ from __future__ import annotations
 import os
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -259,9 +260,16 @@ _tape_cache: dict[tuple[str, ...], tuple[float, dict[str, LiveQuote]]] = {}
 
 
 def tape_quotes(tickers: list[str]) -> dict[str, LiveQuote]:
-    """Batch quotes for the ticker tape: one yfinance download for every
-    listed company, per-ticker seed fallback, 60s cache. Display-only,
-    same rule as live_quote(); DELTA_OFFLINE forces the seed tier."""
+    """Batch quotes for the ticker tape, 60s cache. Display-only, same rule
+    as live_quote(); DELTA_OFFLINE forces the seed tier.
+
+    Live path:
+      - yfinance batch download (one HTTP call) when yfinance is available
+        (local dev); fast for all 33 symbols at once.
+      - otherwise (serverless: no yfinance) SAHMK per ticker, fetched
+        concurrently so the tape stays live in production too.
+      - per-ticker seed fallback for anything neither source can serve.
+    """
     key = tuple(tickers)
     now = time.monotonic()
     with _state_lock:
@@ -269,12 +277,24 @@ def tape_quotes(tickers: list[str]) -> dict[str, LiveQuote]:
     if hit and now - hit[0] < TAPE_TTL_S:
         return hit[1]
 
+    offline = bool(os.environ.get("DELTA_OFFLINE"))
+
     closes: dict[str, tuple[float, float]] = {}
-    if not os.environ.get("DELTA_OFFLINE"):
+    if not offline:
         try:
             closes = marketdata.fetch_last_closes(tickers)
         except Exception:
             closes = {}
+
+    # Tickers the yfinance batch didn't cover: try SAHMK concurrently (this is
+    # the production path, where yfinance is absent and closes is empty).
+    sahmk: dict[str, LiveQuote] = {}
+    missing = [t for t in tickers if t not in closes]
+    if not offline and missing and _sahmk_key():
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            for t, q in zip(missing, pool.map(_sahmk_quote, missing)):
+                if q is not None:
+                    sahmk[t] = q
 
     quotes: dict[str, LiveQuote] = {}
     for t in tickers:
@@ -290,6 +310,8 @@ def tape_quotes(tickers: list[str]) -> dict[str, LiveQuote]:
                 currency="SAR",
                 source="yfinance",
             )
+        elif t in sahmk:
+            quotes[t] = sahmk[t]
         else:
             quotes[t] = _cached_quote(t)
 

@@ -16,3 +16,5 @@ test-results/
 data/news_cache.json
 data/summary_cache.json
 data/subscribers.json
+.vercel
+.env*
