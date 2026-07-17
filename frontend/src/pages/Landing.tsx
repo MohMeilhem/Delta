@@ -55,11 +55,11 @@ const COPY = {
     introStats: [
       ['33', 'شركة مدرجة'],
       ['9', 'قطاعات سعودية'],
-      ['8', 'أرباع للمراقبة'],
+      ['12', 'أرباع للمراقبة'],
     ],
     problemTitle: 'المشكلة',
     problemCards: [
-      ['8 ساعات لكل شركة', 'يقضي المحلل عادةً نحو 8 ساعات لكل شركة في بناء النموذج المالي يدوياً.'],
+      ['40 ساعة أسبوعياً لكل محترف تقريباً', 'يقضي المحلل المحترف نحو 40 ساعة أسبوعياً في بناء النماذج المالية يدوياً.'],
       ['+100,000 ريال سنوياً', 'الأدوات العالمية تتجاوز 100,000 ريال سنوياً للمستخدم، وغالباً ما تكون موجّهة بالإنجليزية.'],
       ['لا تفهم السوق السعودية', 'أدوات السوق التقليدية لا تفهم خصوصية السعودية: الزكاة ليست ضريبة، والصكوك ليست سندات.'],
     ],
@@ -75,7 +75,6 @@ const COPY = {
       ['الزكاة كبند فعلي', 'الزكاة تظهر كبند فعلي داخل محرك التقييم بنسبة 2.5% من الوعاء الزكوي.'],
       ['نموذج المصارف الإسلامية', 'نموذج مستقل للمصارف الإسلامية يعتمد على دخل التمويل، لا الفوائد.'],
       ['الصكوك منفصلة', 'الصكوك منفصلة بوضوح عن الدين التقليدي في البيانات والتقييم.'],
-      ['واجهة عربية أصلية RTL', 'واجهة أصلية بالعربية RTL مع تبديل فوري إلى الإنجليزية بضغطة واحدة.'],
     ],
     aiTitle: 'طبقات الذكاء الاصطناعي',
     aiLayers: [
@@ -86,11 +85,11 @@ const COPY = {
     pricingSubtitle: 'تسعير B2B بالريال السعودي. جرّب، ثم اختر ما يناسب فريقك.',
     monthly: 'شهري',
     yearly: 'سنوي',
-    saveTwoMonths: 'وفّر شهرين',
+    saveTwoMonths: 'خصم 20%',
     popular: 'الأكثر شيوعًا',
     tiers: [
-      { name: 'محلل فردي', priceMonthly: 899, priceYearly: 8990, includes: ['مقعد واحد', 'كل القطاعات', 'تصدير التقارير'] },
-      { name: 'فريق بحثي', priceMonthly: 3499, priceYearly: 34990, includes: ['حتى 5 مقاعد', 'تنبيهات وكيل المراقبة', 'دعم أولوية'] },
+      { name: 'محلل فردي', priceMonthly: 99, priceYearly: 950, includes: ['مقعد واحد', 'كل القطاعات', 'تصدير التقارير'] },
+      { name: 'فريق بحثي', priceMonthly: 499, priceYearly: 4790, includes: ['حتى 5 مقاعد', 'تنبيهات وكيل المراقبة', 'دعم أولوية'] },
       { name: 'مؤسسي', custom: true, includes: ['مقاعد غير محدودة', 'ربط بيانات داخلي', 'إدارة صلاحيات'] },
     ] satisfies Tier[],
     formTitle: 'طلب وصول مبكر',
@@ -107,10 +106,10 @@ const COPY = {
     footerNote: 'المنصة هنا لتجربة الهاكاثون وليست نسخة إنتاجية نهائية.',
     footerApp: 'الدخول إلى المنصة',
     noGateway: 'لا توجد بوابة دفع في هذا العرض',
-    monthly_hint: 'يمكنك التحويل إلى الاشتراك السنوي لتوفير شهرين.',
-    yearly_hint: 'الفوترة السنوية تعادل 10 أشهر فعلياً.',
+    monthly_hint: 'يمكنك التحويل إلى الاشتراك السنوي للحصول على خصم 20%.',
+    yearly_hint: 'الفوترة السنوية تمنحك خصم 20% عن الاشتراك الشهري.',
     perMonth: 'شهريًا',
-    yearlyBadge: 'وفّر شهرين',
+    yearlyBadge: 'خصم 20%',
     demoBadge: 'نسخة عرض للهاكاثون',
     baseline: 'خط الأساس',
     agent: 'الوكيل',
@@ -130,11 +129,11 @@ const COPY = {
     introStats: [
       ['33', 'listed companies'],
       ['9', 'Saudi sectors'],
-      ['8', 'quarters monitored'],
+      ['12', 'quarters monitored'],
     ],
     problemTitle: 'The problem',
     problemCards: [
-      ['8 hours per company', 'Analysts spend about 8 hours per company building models manually.'],
+      ['~40 hours a week per professional', 'A professional analyst spends about 40 hours a week building financial models manually.'],
       ['SAR 100k+ per year', 'Global tools cost more than SAR 100,000 per user each year and are English-first.'],
       ["Misses Saudi context", 'Most tools do not understand the Saudi market: zakat is not tax, sukuk are not bonds.'],
     ],
@@ -150,7 +149,6 @@ const COPY = {
       ['Zakat as a line item', 'Zakat appears as a real valuation line item at 2.5% of the zakat base.'],
       ['Islamic bank model', 'A dedicated Islamic-bank model uses financing income, not interest.'],
       ['Sukuk separated', 'Sukuk are separated from conventional debt in the data and valuation stack.'],
-      ['Native Arabic RTL UI', 'Native Arabic RTL UI with a one-click English toggle.'],
     ],
     aiTitle: 'AI layers',
     aiLayers: [
@@ -161,11 +159,11 @@ const COPY = {
     pricingSubtitle: 'B2B pricing in SAR. Start small, then scale with your team.',
     monthly: 'Monthly',
     yearly: 'Yearly',
-    saveTwoMonths: 'Save 2 months',
+    saveTwoMonths: 'Save 20%',
     popular: 'Most popular',
     tiers: [
-      { name: 'Individual analyst', priceMonthly: 899, priceYearly: 8990, includes: ['1 seat', 'All sectors', 'Report export'] },
-      { name: 'Research team', priceMonthly: 3499, priceYearly: 34990, includes: ['Up to 5 seats', 'Monitoring alerts', 'Priority support'] },
+      { name: 'Individual analyst', priceMonthly: 99, priceYearly: 950, includes: ['1 seat', 'All sectors', 'Report export'] },
+      { name: 'Research team', priceMonthly: 499, priceYearly: 4790, includes: ['Up to 5 seats', 'Monitoring alerts', 'Priority support'] },
       { name: 'Enterprise', custom: true, includes: ['Unlimited seats', 'Internal data integration', 'Permission management'] },
     ] satisfies Tier[],
     formTitle: 'Request early access',
@@ -182,10 +180,10 @@ const COPY = {
     footerNote: 'This is a hackathon demo, not a production release.',
     footerApp: 'Open the platform',
     noGateway: 'No payment gateway in this demo',
-    monthly_hint: 'Switch to yearly billing to save 2 months.',
-    yearly_hint: 'Yearly billing equals 10 months of usage.',
+    monthly_hint: 'Switch to yearly billing to save 20%.',
+    yearly_hint: 'Yearly billing saves you 20% versus monthly.',
     perMonth: 'per month',
-    yearlyBadge: 'Save 2 months',
+    yearlyBadge: 'Save 20%',
     demoBadge: 'Hackathon demo build',
     baseline: 'Baseline',
     agent: 'Agent',
@@ -481,7 +479,8 @@ export default function Landing() {
     setSubmitting(true)
     try {
       const res = await api.subscribe({ name: form.name, email: form.email, company: form.company })
-      setStatus({ kind: 'success', text: res.message })
+      // localized copy, not the backend's fixed-language message string
+      setStatus({ kind: 'success', text: res.status === 'duplicate' ? copy.duplicate : copy.success })
       if (res.status === 'created') setForm({ name: '', email: '', company: '' })
     } catch {
       setStatus({ kind: 'error', text: copy.genericError })
@@ -619,7 +618,7 @@ export default function Landing() {
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {[
                 { label: copy.baseline, to: 33, sub: lang === 'ar' ? 'شركة' : 'companies', color: 'accent', icon: TrendUp },
-                { label: copy.agent, to: 8, sub: lang === 'ar' ? 'أرباع' : 'quarters', color: 'analyst', icon: GlobeHemisphereEast },
+                { label: copy.agent, to: 12, sub: lang === 'ar' ? 'أرباع' : 'quarters', color: 'analyst', icon: GlobeHemisphereEast },
               ].map(({ label, to, sub, color, icon: Icon }) => (
                 <div key={label} className={`mini-stat-card border-${color}/20 bg-gradient-to-br from-${color}/12 via-surface to-surface-2`}>
                   <div className="text-[11px] text-ink-faint">{label}</div>

@@ -37,3 +37,30 @@ def test_all_sources_failing_falls_back_to_static_seed(monkeypatch):
 
     assert quote.available is True
     assert quote.source == "cache"
+
+
+def test_tape_quotes_offline_uses_seed(monkeypatch):
+    live._tape_cache.clear()
+    monkeypatch.setenv("DELTA_OFFLINE", "1")
+
+    quotes = live.tape_quotes(["1120"])
+
+    assert quotes["1120"].available is True
+    assert quotes["1120"].source == "cache"
+
+
+def test_tape_quotes_batch_with_per_ticker_fallback(monkeypatch):
+    live._tape_cache.clear()
+    monkeypatch.delenv("DELTA_OFFLINE", raising=False)
+    monkeypatch.setattr(
+        marketdata, "fetch_last_closes",
+        lambda tickers: {"1120": (64.0, 65.6)},  # 1180 missing from the batch
+    )
+
+    quotes = live.tape_quotes(["1120", "1180"])
+
+    assert quotes["1120"].source == "yfinance"
+    assert quotes["1120"].price == 65.6
+    assert quotes["1120"].change_pct == 2.5
+    assert quotes["1180"].source == "cache"  # seed fallback for the miss
+    live._tape_cache.clear()

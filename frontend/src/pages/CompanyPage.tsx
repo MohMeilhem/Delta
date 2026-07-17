@@ -184,11 +184,6 @@ export default function CompanyPage() {
                   <span className="num rounded-lg bg-surface-2 px-2 py-0.5 text-sm text-ink-muted">
                     {profile.ticker}
                   </span>
-                  {profile.is_islamic_bank && (
-                    <span className="rounded-full border border-accent-dim px-2.5 py-0.5 text-xs text-accent">
-                      {t.islamicBank}
-                    </span>
-                  )}
                   {profile.has_sukuk && (
                     <span className="rounded-full border border-line px-2.5 py-0.5 text-xs text-ink-muted">
                       {t.sukuk}

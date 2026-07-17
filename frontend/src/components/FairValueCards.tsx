@@ -13,8 +13,10 @@ export default function FairValueCards({
   const { t } = useLang()
   const fv = valuation?.fair_value ?? baseline.fair_value
   const deltaPct = valuation?.delta_pct ?? 0
-  const upside = valuation?.upside_pct ?? baseline.upside_pct
-  const price = baseline.current_price
+  // Gap vs the live market price when the backend has one, so this card
+  // agrees with the tape/header/peers; seed price otherwise.
+  const upside = valuation?.market_upside_pct ?? valuation?.upside_pct ?? baseline.upside_pct
+  const price = valuation?.market_price ?? baseline.current_price
   const b = valuation?.breakdown ?? baseline.breakdown
 
   return (
@@ -35,7 +37,8 @@ export default function FairValueCards({
         </Metric>
         <Metric
           label={t.delta}
-          tone={deltaPct > 0.05 ? 'positive' : deltaPct < -0.05 ? 'negative' : undefined}
+          // delta_pct is in percent units — neutral band is ±5%, not ±0.05%
+          tone={deltaPct > 5 ? 'positive' : deltaPct < -5 ? 'negative' : undefined}
         >
           <NumberTicker
             value={deltaPct}

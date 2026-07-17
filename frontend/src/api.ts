@@ -61,6 +61,7 @@ export interface TapeEntry {
   name_en: string
   price: number
   change_pct: number
+  source?: 'yfinance' | 'cache'
 }
 
 export interface PeerRow {
@@ -74,6 +75,7 @@ export interface PeerRow {
   net_margin: number
   revenue_yoy: number
   is_self: boolean
+  source?: 'yfinance' | 'cache'
 }
 
 export interface Candle {
@@ -160,6 +162,7 @@ export interface NewsItem {
   date: string
   body: string
   source: string
+  url?: string | null
 }
 
 export interface Assumptions {
@@ -220,6 +223,9 @@ export interface AnalystValuation {
   upside_pct: number
   assumptions: Assumptions
   breakdown: ValuationBreakdown
+  market_price?: number | null
+  market_upside_pct?: number | null
+  price_source?: 'yfinance' | 'sahmk' | 'cache'
 }
 
 export interface AnomalyFlag {

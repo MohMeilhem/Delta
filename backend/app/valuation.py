@@ -151,10 +151,16 @@ class AnalystValuationResponse(BaseModel):
     baseline_fair_value: float
     delta_abs: float
     delta_pct: float
-    current_price: float
-    upside_pct: float
+    current_price: float  # seed model price — engine numbers stay reproducible
+    upside_pct: float  # fair_value vs current_price (seed)
     assumptions: Assumptions
     breakdown: ValuationBreakdown
+    # Display overlay, filled by the endpoint layer (never by the engine):
+    # the live market price the rest of the screen (tape, header, peers)
+    # shows, and the gap recomputed against it. Falls back to the seed values.
+    market_price: float | None = None
+    market_upside_pct: float | None = None
+    price_source: str = "cache"  # "yfinance" | "sahmk" | "cache"
 
 
 # --------------------------------------------------------------------------
@@ -293,7 +299,9 @@ def derive_assumptions(company: Company, projected: list[ProjectedQuarter],
     keep = _keep_indices(fins, exclude)
     # Anomaly-resistant anchor: median of the last 4 kept actual revenues.
     anchor = float(np.median([fins[i].revenue for i in keep[-4:]]))
-    end_rev = projected[-1].revenue
+    # clamp: a downtrend extrapolation can project revenue <= 0, and a
+    # negative base under a fractional power returns a complex number
+    end_rev = max(projected[-1].revenue, anchor * 0.01)
     horizon = len(projected)
     annual_growth = (end_rev / anchor) ** (4 / horizon) - 1 if anchor > 0 else 0.0
     margins = [p.net_income / p.revenue for p in projected if p.revenue]

@@ -13,7 +13,10 @@ import { defineConfig, devices } from '@playwright/test'
 export default defineConfig({
   testDir: './e2e',
   timeout: 45_000,
-  fullyParallel: true,
+  // serial: parallel workers pile onto the LLM-backed endpoints (scenarios,
+  // agent-report) and time each other out when a real API key is configured
+  fullyParallel: false,
+  workers: 1,
   retries: process.env.CI ? 2 : 0,
   reporter: [['list']],
   use: {

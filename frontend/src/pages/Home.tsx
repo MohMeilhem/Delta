@@ -24,12 +24,23 @@ export default function Home() {
       .catch(() => setError(true))
   }, [])
 
-  const openSector = async (id: string) => {
+  const [failed, setFailed] = useState<Set<string>>(new Set())
+
+  const loadCompanies = (id: string) => {
+    setFailed((f) => {
+      const next = new Set(f)
+      next.delete(id)
+      return next
+    })
+    api
+      .sectorCompanies(id)
+      .then((list) => setCompanies((c) => ({ ...c, [id]: list })))
+      .catch(() => setFailed((f) => new Set(f).add(id)))
+  }
+
+  const openSector = (id: string) => {
     setActive((cur) => (cur === id ? null : id))
-    if (!companies[id]) {
-      const list = await api.sectorCompanies(id)
-      setCompanies((c) => ({ ...c, [id]: list }))
-    }
+    if (!companies[id]) loadCompanies(id)
   }
 
   return (
@@ -112,7 +123,11 @@ export default function Home() {
                       className="overflow-hidden"
                     >
                       <div className="border-t border-accent/15 bg-accent/3">
-                        {!companies[s.id] ? (
+                        {failed.has(s.id) ? (
+                          <div className="p-3">
+                            <ErrorNote retry={() => loadCompanies(s.id)} />
+                          </div>
+                        ) : !companies[s.id] ? (
                           <div className="space-y-px p-3">
                             <Skeleton className="h-11 w-full" />
                             <Skeleton className="h-11 w-full" />
@@ -136,11 +151,6 @@ export default function Home() {
                                     {altName(c)}
                                   </span>
                                 </span>
-                                {c.is_islamic_bank && (
-                                  <span className="rounded-full border border-accent-dim px-2 py-0.5 text-[10px] text-accent">
-                                    {t.islamicBank}
-                                  </span>
-                                )}
                                 <Caret
                                   size={13}
                                   weight="bold"

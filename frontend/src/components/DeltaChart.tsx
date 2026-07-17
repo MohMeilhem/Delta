@@ -13,7 +13,7 @@ import {
   YAxis,
 } from 'recharts'
 import type { ProjectedQuarter, QuarterFinancials } from '../api'
-import { fmtMillions, fmtQuarter } from '../format'
+import { fmtMillions, fmtMillionsShort, fmtQuarter } from '../format'
 import { useLang } from '../i18n'
 import { useChartColors } from '../theme'
 import { Crosshair, NumberTicker } from './ui'
@@ -87,16 +87,20 @@ export default function DeltaChart({
   )
 
   // Pin the Y domain so the crosshair readout inverts the exact plotted scale.
-  const yMax = useMemo(() => {
+  // yMin extends below zero when a quarter reports a loss — a [0, max] pin
+  // would clamp the line to the baseline and hide the loss entirely.
+  const [yMin, yMax] = useMemo(() => {
     const vals = data.flatMap((p) =>
       [p.actual, p.baseline, p.analyst].filter((v): v is number => v != null),
     )
-    return vals.length ? Math.max(...vals) * 1.06 : 1
+    if (!vals.length) return [0, 1]
+    const max = Math.max(...vals) * 1.06
+    const min = Math.min(0, Math.min(...vals) * 1.06)
+    return [min, max]
   }, [data])
 
   const wrapRef = useRef<HTMLDivElement>(null)
-  const fmtValue = (v: number) =>
-    Math.abs(v) >= 1000 ? `${(v / 1000).toFixed(1)}B` : `${Math.round(v)}M`
+  const fmtValue = fmtMillionsShort // locale-aware: Arabic-Indic digits in AR mode
 
   const lastActualQuarter = history[history.length - 1]?.quarter
   const reduce = useReducedMotion()
@@ -128,7 +132,7 @@ export default function DeltaChart({
           t: PAD + M.top,
           b: h - PAD - M.bottom - X_HEIGHT,
         })}
-        valueAt={(y, b) => yMax * ((b.b - y) / (b.b - b.t))}
+        valueAt={(y, b) => yMin + (yMax - yMin) * ((b.b - y) / (b.b - b.t))}
         xLabelAt={(x, b) => {
           if (data.length < 2) return null
           const i = Math.round((x - b.l) / ((b.r - b.l) / (data.length - 1)))
@@ -157,7 +161,7 @@ export default function DeltaChart({
             height={X_HEIGHT}
           />
           <YAxis
-            domain={[0, yMax]}
+            domain={[yMin, yMax]}
             tickFormatter={fmtValue}
             tick={{ fill: cc.faint, fontSize: 11, fontFamily: 'IBM Plex Mono' }}
             tickLine={false}

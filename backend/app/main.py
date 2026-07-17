@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from . import anomaly, chat, data, live, llm, prices, signals, valuation
+from . import anomaly, chat, data, live, live_news, llm, prices, signals, valuation
 from .anomaly import AgentReport
 from .chat import ChatReply, ChatRequest
 from .llm import CompanyOverview, Lang, NewsSummary, ScenarioSet
@@ -63,26 +63,35 @@ def subscribe(payload: SubscriptionRequest) -> SubscriptionResponse:
 
 def _company_or_404(ticker: str) -> Company:
     c = data.company(ticker)
-    if c is None:
+    # Also require financials: a company listed without seed quarters would
+    # otherwise 500 deep inside profile/valuation/prices instead of 404 here.
+    if c is None or not data.financials(ticker):
         raise HTTPException(404, f"unknown ticker: {ticker}")
     return c
 
 
 @app.get("/market/tape", response_model=list[TapeEntry])
 def market_tape() -> list[TapeEntry]:
-    """Latest price + QoQ move for every listed company (the ticker tape)."""
+    """Latest price + daily move for every listed company (the ticker tape).
+
+    Prices come from the display-only live layer (batched yfinance, 60s
+    server cache); companies without live data fall back to the seed
+    dataset's quarter-over-quarter move, tagged source="cache".
+    """
+    companies = data.companies()
+    quotes = live.tape_quotes([c.ticker for c in companies])
     entries = []
-    for c in data.companies():
-        fins = data.financials(c.ticker) or []
-        if len(fins) < 2:
+    for c in companies:
+        q = quotes.get(c.ticker)
+        if not q or not q.available or q.price is None:
             continue
-        last, prev = fins[-1].share_price, fins[-2].share_price
         entries.append(TapeEntry(
             ticker=c.ticker,
             name_ar=c.name_ar,
             name_en=c.name_en,
-            price=last,
-            change_pct=round((last / prev - 1) * 100, 2) if prev else 0.0,
+            price=q.price,
+            change_pct=q.change_pct or 0.0,
+            source=q.source,
         ))
     return entries
 
@@ -114,8 +123,9 @@ def company_financials(ticker: str) -> list[QuarterFinancials]:
 
 @app.get("/companies/{ticker}/news", response_model=list[NewsItem])
 def company_news(ticker: str) -> list[NewsItem]:
-    _company_or_404(ticker)
-    return data.news(ticker) or []
+    """Live headlines (Bing News RSS, daily cache) with seed-news fallback."""
+    c = _company_or_404(ticker)
+    return live_news.company_news(c) or data.news(ticker) or []
 
 
 def _parse_exclude(exclude: str) -> tuple[str, ...]:
@@ -135,7 +145,15 @@ def company_baseline(ticker: str, horizon: int = 8, exclude: str = "",
 
 @app.post("/companies/{ticker}/valuation", response_model=AnalystValuationResponse)
 def company_valuation(ticker: str, assumptions: Assumptions) -> AnalystValuationResponse:
-    return valuation.analyst_valuation(_company_or_404(ticker), assumptions)
+    """Engine math runs on seed data only; the display overlay adds the live
+    market price so the gap shown here matches the tape/header/peers."""
+    v = valuation.analyst_valuation(_company_or_404(ticker), assumptions)
+    q = live.live_quote(ticker)  # 5s cache; SAHMK/yfinance/seed chain
+    price = q.price if q.available and q.price else v.current_price
+    v.market_price = round(price, 2)
+    v.market_upside_pct = round((v.fair_value / price - 1) * 100, 1) if price else v.upside_pct
+    v.price_source = q.source if q.available and q.price else "cache"
+    return v
 
 
 @app.get("/companies/{ticker}/agent-report", response_model=AgentReport)
@@ -210,26 +228,39 @@ def company_sensitivity(ticker: str, assumptions: Assumptions) -> SensitivityRes
 
 @app.get("/companies/{ticker}/peers", response_model=list[PeerRow])
 def company_peers(ticker: str) -> list[PeerRow]:
-    """Sector peer comparison: valuation and quality metrics side by side."""
+    """Sector peer comparison: valuation and quality metrics side by side.
+
+    Fair value always comes from the seed-data valuation engine; the price
+    column (and the gap/P-E derived from it) uses the same live display
+    layer as the ticker tape, so both show identical numbers on screen.
+    """
     c = _company_or_404(ticker)
+    peers = data.companies_by_sector(c.sector)
+    quotes = live.tape_quotes([p.ticker for p in peers])
     rows = []
-    for peer in data.companies_by_sector(c.sector):
+    for peer in peers:
         fins = data.financials(peer.ticker) or []
+        if not fins:
+            continue  # never 500 the whole table over one bad seed entry
         latest = fins[-1]
         base = valuation.baseline(peer)
+        q = quotes.get(peer.ticker)
+        price = q.price if q and q.available and q.price else latest.share_price
+        source = q.source if q and q.available and q.price else "cache"
         annual_eps = latest.eps * 4
         yoy = (latest.revenue / fins[-5].revenue - 1) if len(fins) >= 5 else 0.0
         rows.append(PeerRow(
             ticker=peer.ticker,
             name_ar=peer.name_ar,
             name_en=peer.name_en,
-            price=latest.share_price,
+            price=price,
             fair_value=base.fair_value,
-            upside_pct=base.upside_pct,
-            pe_ratio=round(latest.share_price / annual_eps, 1) if annual_eps > 0 else 0.0,
+            upside_pct=round((base.fair_value / price - 1) * 100, 1) if price else 0.0,
+            pe_ratio=round(price / annual_eps, 1) if annual_eps > 0 else 0.0,
             net_margin=latest.net_margin,
             revenue_yoy=round(yoy, 4),
             is_self=peer.ticker == c.ticker,
+            source=source,
         ))
     rows.sort(key=lambda r: -r.upside_pct)
     return rows

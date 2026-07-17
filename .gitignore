@@ -12,3 +12,7 @@ attached_assets/
 zipFile.zip
 playwright-report/
 test-results/
+# runtime caches / demo signups (regenerated at run time, not source)
+data/news_cache.json
+data/summary_cache.json
+data/subscribers.json

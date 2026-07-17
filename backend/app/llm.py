@@ -17,15 +17,17 @@ Reliability contract (per CLAUDE.md):
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
+import threading
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from . import data, valuation
+from . import data, live_news, valuation
 from .models import Company
 from .valuation import AnalystValuationResponse, Assumptions
 
@@ -34,11 +36,40 @@ FALLBACKS_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "llm_f
 
 # Referenced by tests/conftest.py's autouse fixture, which points this at a
 # temp file per test run so tests never read/write the real cache on disk.
-# No reader/writer wired up yet on this module's side — stub only, so the
-# test suite (and anything that later builds the real summary cache) has a
-# stable attribute to monkeypatch.
-SUMMARY_CACHE_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "summary_cache.json"
+# Keyed by "{ticker}:{lang}:{news fingerprint}" — a summary regenerates only
+# when the underlying headlines change (daily, when live news refreshes).
+SUMMARY_CACHE_PATH = data.WRITABLE_DIR / "summary_cache.json"
 _summary_cache: dict | None = None
+_summary_cache_lock = threading.Lock()
+
+
+def _load_summary_cache() -> dict:
+    global _summary_cache
+    with _summary_cache_lock:
+        if _summary_cache is None:
+            try:
+                _summary_cache = json.loads(SUMMARY_CACHE_PATH.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                _summary_cache = {}
+        return _summary_cache
+
+
+def _store_summary(cache_key: str, payload: dict) -> None:
+    """Insert one entry, evicting stale fingerprints of the same ticker:lang
+    (news changed -> old summary is dead weight), then persist atomically."""
+    ticker_lang = cache_key.rsplit(":", 1)[0]
+    with _summary_cache_lock:
+        assert _summary_cache is not None  # _load_summary_cache ran first
+        for k in [k for k in _summary_cache if k.rsplit(":", 1)[0] == ticker_lang]:
+            del _summary_cache[k]
+        _summary_cache[cache_key] = payload
+        try:
+            tmp = SUMMARY_CACHE_PATH.with_suffix(".json.tmp")
+            tmp.write_text(
+                json.dumps(_summary_cache, ensure_ascii=False, indent=1), encoding="utf-8")
+            os.replace(tmp, SUMMARY_CACHE_PATH)
+        except OSError:
+            pass  # cache is an optimization; never break the response over it
 
 Lang = Literal["ar", "en"]
 
@@ -250,7 +281,16 @@ def classify_headline_sentiment(headline: str) -> str:
 def summarize_news(ticker: str, lang: Lang = "ar") -> NewsSummary:
     c = data.company(ticker)
     assert c is not None
-    items = data.news(ticker) or []
+    # Summarize the same headlines the news panel shows: live first, seed fallback.
+    items = live_news.company_news(c) or data.news(ticker) or []
+
+    # Cache on the headline set: a summary regenerates only when news changes.
+    fingerprint = hashlib.md5(
+        "\n".join(i.headline for i in items).encode("utf-8")).hexdigest()[:12]
+    cache_key = f"{ticker}:{lang}:{fingerprint}"
+    cache = _load_summary_cache()
+    if cache_key in cache:
+        return NewsSummary(**cache[cache_key])
 
     news_block = "\n".join(
         f"- [{i.date}] {i.headline} ({i.source}): {i.body}" for i in items
@@ -269,6 +309,7 @@ News for {c.name_ar} / {c.name_en}:
     result = _parse_with_retry(prompt, NewsSummary)
     if result is not None:
         result.source = "llm"
+        _store_summary(cache_key, result.model_dump())
         return result
 
     # Fallback: curated summary if available, else heuristic sentiment.

@@ -46,6 +46,16 @@ export function fmtMillions(v: number): string {
   return `SAR ${NF1.en.format(v)}M`
 }
 
+/** Compact axis/crosshair labels for SAR-millions scales (no currency word). */
+export function fmtMillionsShort(v: number): string {
+  const abs = Math.abs(v)
+  if (LANG === 'ar') {
+    if (abs >= 1000) return `${NF1.ar.format(v / 1000)} مليار`
+    return `${NF0.ar.format(v)} مليون`
+  }
+  return abs >= 1000 ? `${NF1.en.format(v / 1000)}B` : `${NF0.en.format(v)}M`
+}
+
 export function fmtPct(v: number, signed = false): string {
   // round to the displayed precision FIRST so "-0.04" never renders "-0.0%"
   const rounded = Math.round(Math.abs(v) * 10) / 10

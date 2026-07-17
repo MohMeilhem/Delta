@@ -70,6 +70,7 @@ class NewsItem(BaseModel):
     date: str
     body: str
     source: str
+    url: str | None = None  # publisher link (live news only; seed items have none)
 
 
 class TapeEntry(BaseModel):
@@ -79,20 +80,22 @@ class TapeEntry(BaseModel):
     name_ar: str
     name_en: str
     price: float
-    change_pct: float  # vs previous quarter close
+    change_pct: float  # vs previous daily close (live) or previous quarter (seed)
+    source: str = "cache"  # "yfinance" | "cache"
 
 
 class PeerRow(BaseModel):
     ticker: str
     name_ar: str
     name_en: str
-    price: float
-    fair_value: float
-    upside_pct: float
+    price: float  # live market price when available, seed price otherwise
+    fair_value: float  # always from the seed-data valuation engine
+    upside_pct: float  # fair_value vs the displayed price
     pe_ratio: float
     net_margin: float
     revenue_yoy: float
     is_self: bool
+    source: str = "cache"  # "yfinance" | "cache" — which layer served `price`
 
 
 class SubscriptionRequest(BaseModel):

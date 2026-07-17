@@ -133,7 +133,7 @@ function SensitivityHeatmap({ ticker, assumptions }: { ticker: string; assumptio
           <thead>
             <tr>
               <th className="num p-1.5 text-[10px] font-normal text-ink-faint">
-                {t.growthAxis.replace('←', '↓')} / {t.discountAxis}
+                {t.growthAxis.replace(/[←→]/, '↓')} / {t.discountAxis}
               </th>
               {data.discount_steps.map((d) => (
                 <th
@@ -239,7 +239,17 @@ function PeersTable({ ticker }: { ticker: string }) {
                   </span>
                 </Link>
               </td>
-              <td className="num py-2.5 pe-4 text-end">{fmt(p.price)}</td>
+              <td className="num py-2.5 pe-4 text-end">
+                <span className="inline-flex items-center gap-1.5">
+                  {p.source === 'yfinance' && (
+                    <span
+                      className="inline-block h-1 w-1 rounded-full bg-accent"
+                      title={t.liveBadge}
+                    />
+                  )}
+                  {fmt(p.price)}
+                </span>
+              </td>
               <td className="num py-2.5 pe-4 text-end">{fmt(p.fair_value)}</td>
               <td
                 className={`num py-2.5 pe-4 text-end ${p.upside_pct >= 0 ? 'text-accent' : 'text-negative'}`}

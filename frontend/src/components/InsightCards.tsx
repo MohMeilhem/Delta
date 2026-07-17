@@ -334,8 +334,10 @@ export function NewsSummaryCard({ ticker }: { ticker: string }) {
         </div>
 
         <ul className="divide-y divide-line/60">
-          {data.items.map((item) => {
-            const full = items.find((n) => n.headline === item.headline)
+          {data.items.map((item, i) => {
+            // headline match first; index fallback keeps rows expandable when
+            // the summary language differs from the news items' language
+            const full = items.find((n) => n.headline === item.headline) ?? items[i]
             const open = expanded === item.headline
             return (
               <li key={item.headline} className="py-2 first:pt-0 last:pb-0">
@@ -378,7 +380,19 @@ export function NewsSummaryCard({ ticker }: { ticker: string }) {
                         {full.body}
                       </p>
                       <div className="mt-1.5 text-[10px] text-ink-faint">
-                        {full.source} · {fmtDate(full.date)}
+                        {full.url ? (
+                          <a
+                            href={full.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline decoration-line hover:text-accent"
+                          >
+                            {full.source}
+                          </a>
+                        ) : (
+                          full.source
+                        )}{' '}
+                        · {fmtDate(full.date)}
                       </div>
                     </motion.div>
                   )}

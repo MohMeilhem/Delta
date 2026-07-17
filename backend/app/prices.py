@@ -278,9 +278,11 @@ def technicals(ticker: str) -> Technicals:
     closes = [c.close for c in daily]
     last = closes[-1]
 
-    sma20 = sum(closes[-20:]) / 20
-    sma50 = sum(closes[-50:]) / 50
-    sma200 = sum(closes[-200:]) / 200
+    # divide by the actual slice length: with a short history the fixed
+    # denominators understate every SMA and skew the buy/sell signals
+    sma20 = sum(closes[-20:]) / len(closes[-20:])
+    sma50 = sum(closes[-50:]) / len(closes[-50:])
+    sma200 = sum(closes[-200:]) / len(closes[-200:])
     rsi = _rsi(closes)
     ema12 = _ema(closes, 12)
     ema26 = _ema(closes, 26)

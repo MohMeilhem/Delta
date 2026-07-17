@@ -66,6 +66,37 @@ def fetch_ticker(ticker: str, period: str = "1y") -> list[DailyBar]:
         return []
 
 
+def fetch_last_closes(tickers: list[str]) -> dict[str, tuple[float, float]]:
+    """Batched (previous_close, last_close) per ticker, one HTTP round trip.
+
+    Used by live.py for the ticker tape — fetching 33 symbols one by one
+    would take ~30s; yf.download gets them all at once. Symbols that fail
+    or lack two closes are simply absent from the result.
+    """
+    if yf is None or not tickers:
+        return {}
+    try:
+        hist = yf.download(
+            [_symbol(t) for t in tickers],
+            period="5d",
+            progress=False,
+            group_by="ticker",
+            threads=True,
+            timeout=FETCH_TIMEOUT_S,
+        )
+    except Exception:
+        return {}
+    out: dict[str, tuple[float, float]] = {}
+    for t in tickers:
+        try:
+            closes = hist[_symbol(t)]["Close"].dropna()
+            if len(closes) >= 2:
+                out[t] = (float(closes.iloc[-2]), float(closes.iloc[-1]))
+        except Exception:
+            continue
+    return out
+
+
 def fetch_financials(ticker: str) -> list[QuarterlyFundamental]:
     """Quarterly revenue/net income/net margin, oldest first. Empty on failure.
 

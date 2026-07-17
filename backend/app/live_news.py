@@ -32,7 +32,7 @@ from xml.etree import ElementTree
 
 import httpx
 
-from .data import DATA_DIR
+from .data import WRITABLE_DIR
 from .models import Company, NewsItem
 
 RSS_URL = "https://www.bing.com/news/search"
@@ -41,7 +41,7 @@ CACHE_TTL_S = 24 * 60 * 60  # "every day it looks for the latest update"
 MAX_ITEMS = 8
 MAX_AGE_DAYS = 365  # Bing occasionally surfaces ancient evergreen pages
 BODY_MAX_CHARS = 600
-CACHE_PATH = DATA_DIR / "news_cache.json"
+CACHE_PATH = WRITABLE_DIR / "news_cache.json"
 
 _lock = threading.Lock()
 _cache: dict[str, dict] | None = None  # {ticker: {fetched_at, items}}
@@ -118,10 +118,24 @@ def _parse_rss(xml_text: str) -> list[NewsItem]:
     return items[:MAX_ITEMS]
 
 
+def _normalize_ar(s: str) -> str:
+    """Fold hamza variants so 'الإنماء' and 'الانماء' compare equal."""
+    return re.sub("[أإآ]", "ا", s)
+
+
+def _relevant(company: Company, items: list[NewsItem]) -> list[NewsItem]:
+    """Bing's quoted-phrase matching is loose in the RSS endpoint — e.g.
+    'مصرف الإنماء' surfaces Lebanon's 'مجلس الإنماء والإعمار'. Require the
+    company's full Arabic name to actually appear in the item text."""
+    n = _normalize_ar(company.name_ar)
+    return [i for i in items if n in _normalize_ar(f"{i.headline} {i.body}")]
+
+
 def _fetch(company: Company) -> list[NewsItem] | None:
     # Query ladder: exact-phrase name first (most on-topic); if everything it
-    # finds is stale (>1y, filtered by _parse_rss), retry with stock-market
-    # phrasings that surface recent coverage for less-newsworthy tickers.
+    # finds is stale (>1y, filtered by _parse_rss) or off-entity (filtered by
+    # _relevant), retry with stock-market phrasings that surface recent
+    # coverage for less-newsworthy tickers.
     n = company.name_ar
     queries = [f'"{n}"', f'"سهم {n}"', f'"{n}" أرباح']
     try:
@@ -134,7 +148,7 @@ def _fetch(company: Company) -> list[NewsItem] | None:
                 r = client.get(RSS_URL, params={
                     "q": query, "format": "rss", "setmkt": "ar-SA"})
                 r.raise_for_status()
-                items = _parse_rss(r.text)
+                items = _relevant(company, _parse_rss(r.text))
                 if items:
                     return items
         return None

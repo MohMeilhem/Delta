@@ -3,13 +3,19 @@
 from __future__ import annotations
 
 import json
+import os
+import threading
 from functools import lru_cache
 from pathlib import Path
 
 from .models import Company, NewsItem, QuarterFinancials, Sector
 
 DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
-SUBSCRIBERS_PATH = DATA_DIR / "subscribers.json"
+# Seed data (DATA_DIR) is read-only in production. Runtime writes (subscribers,
+# caches) go to a writable dir: /tmp on Vercel, where the bundle FS is read-only
+# except /tmp; the seed dir locally otherwise.
+WRITABLE_DIR = Path("/tmp") if os.environ.get("VERCEL") else DATA_DIR
+SUBSCRIBERS_PATH = WRITABLE_DIR / "subscribers.json"
 
 
 @lru_cache(maxsize=1)
@@ -68,13 +74,30 @@ def macro() -> dict:
     return {"series": raw["series"], "context_en": raw.get("context_en", [])}
 
 
+# /subscribe runs on FastAPI's threadpool: serialize read-append-write and
+# write atomically (temp file + replace) so concurrent submits can't lose an
+# entry or leave a half-written file behind for the next read to choke on.
+_subscribers_lock = threading.Lock()
+
+
 def subscribers() -> list[dict]:
+    with _subscribers_lock:
+        return _read_subscribers()
+
+
+def _read_subscribers() -> list[dict]:
     if not SUBSCRIBERS_PATH.exists():
         return []
     return json.loads(SUBSCRIBERS_PATH.read_text(encoding="utf-8"))
 
 
 def append_subscriber(entry: dict) -> None:
-    rows = subscribers()
-    rows.append(entry)
-    SUBSCRIBERS_PATH.write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")
+    with _subscribers_lock:
+        rows = _read_subscribers()
+        rows.append(entry)
+        try:
+            tmp = SUBSCRIBERS_PATH.with_suffix(".json.tmp")
+            tmp.write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")
+            os.replace(tmp, SUBSCRIBERS_PATH)
+        except OSError:
+            pass  # read-only fs: never 500 the signup form over a persistence miss

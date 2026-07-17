@@ -194,12 +194,17 @@ def _fundamental_flags(ticker: str) -> tuple[list[SignalFlag], bool, bool]:
 
     _check("net_margin", latest.net_margin, [f.net_margin for f in trailing])
 
-    growth_latest = latest.revenue / fins[-2].revenue - 1
-    growth_trailing = [
-        fins[i].revenue / fins[i - 1].revenue - 1
-        for i in range(len(fins) - FUNDAMENTALS_WINDOW - 1, len(fins) - 1)
-    ]
-    _check("revenue_growth", growth_latest, growth_trailing)
+    # range start clamps to 1: at exactly WINDOW+1 quarters the old start of 0
+    # made fins[i - 1] wrap to fins[-1] and corrupt the trailing distribution
+    if fins[-2].revenue:
+        growth_latest = latest.revenue / fins[-2].revenue - 1
+        growth_trailing = [
+            fins[i].revenue / fins[i - 1].revenue - 1
+            for i in range(max(1, len(fins) - FUNDAMENTALS_WINDOW - 1), len(fins) - 1)
+            if fins[i - 1].revenue
+        ]
+        if len(growth_trailing) >= 2:
+            _check("revenue_growth", growth_latest, growth_trailing)
 
     return flags, True, True
 
@@ -243,6 +248,9 @@ def signal_series(ticker: str) -> SeriesResponse:
         before it would count as an anomaly given its own recent volatility."
     """
     bars = marketdata.fetch_ticker(ticker, period="1y")
+    # drop non-positive closes (halted/bad ticks): they would blow up the log
+    # return below — detect_signals degrades on bad data, this must too
+    bars = [b for b in bars if b.close > 0]
     if len(bars) < MIN_RETURN_VOLUME_POINTS + 1:
         return SeriesResponse(ticker=ticker, dates=[], mu=[], upper=[], lower=[])
 

@@ -18,6 +18,7 @@ silently to the next tier with correct source tagging, never raises.
 from __future__ import annotations
 
 import os
+import threading
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -41,6 +42,10 @@ SAHMK_TIMEOUT_S = 3.0
 CACHE_TTL_S = 5  # short enough for the frontend's poll loop to feel live
 
 _cache: dict[str, tuple[float, "LiveQuote"]] = {}
+# One lock for all module bookkeeping (quote/tape caches, health counters):
+# endpoints run on FastAPI's threadpool, and read-modify-write on shared
+# dicts is not atomic. Network fetches stay OUTSIDE the lock.
+_state_lock = threading.Lock()
 
 # Health tracking: which layer most recently served each data type, and how
 # many times each layer has served a request since process start. Read-only
@@ -96,8 +101,9 @@ class MarketSummary(BaseModel):
 
 
 def _record(kind: str, source: str) -> None:
-    _source_counts[kind][source] = _source_counts[kind].get(source, 0) + 1
-    _last_source[kind] = source
+    with _state_lock:
+        _source_counts[kind][source] = _source_counts[kind].get(source, 0) + 1
+        _last_source[kind] = source
 
 
 # --------------------------------------------------------------------------
@@ -224,7 +230,8 @@ def _cached_quote(ticker: str) -> LiveQuote:
 
 def live_quote(ticker: str) -> LiveQuote:
     now = time.monotonic()
-    hit = _cache.get(ticker)
+    with _state_lock:
+        hit = _cache.get(ticker)
     if hit and now - hit[0] < CACHE_TTL_S:
         return hit[1]
 
@@ -242,8 +249,53 @@ def live_quote(ticker: str) -> LiveQuote:
         quote = _cached_quote(ticker)
 
     _record("quote", quote.source)
-    _cache[ticker] = (now, quote)
+    with _state_lock:
+        _cache[ticker] = (now, quote)
     return quote
+
+
+TAPE_TTL_S = 60
+_tape_cache: dict[tuple[str, ...], tuple[float, dict[str, LiveQuote]]] = {}
+
+
+def tape_quotes(tickers: list[str]) -> dict[str, LiveQuote]:
+    """Batch quotes for the ticker tape: one yfinance download for every
+    listed company, per-ticker seed fallback, 60s cache. Display-only,
+    same rule as live_quote(); DELTA_OFFLINE forces the seed tier."""
+    key = tuple(tickers)
+    now = time.monotonic()
+    with _state_lock:
+        hit = _tape_cache.get(key)
+    if hit and now - hit[0] < TAPE_TTL_S:
+        return hit[1]
+
+    closes: dict[str, tuple[float, float]] = {}
+    if not os.environ.get("DELTA_OFFLINE"):
+        try:
+            closes = marketdata.fetch_last_closes(tickers)
+        except Exception:
+            closes = {}
+
+    quotes: dict[str, LiveQuote] = {}
+    for t in tickers:
+        pair = closes.get(t)
+        if pair:
+            prev, last = pair
+            quotes[t] = LiveQuote(
+                available=True,
+                symbol=f"{t}.SR",
+                price=round(last, 2),
+                previous_close=round(prev, 2),
+                change_pct=round((last / prev - 1) * 100, 2) if prev else None,
+                currency="SAR",
+                source="yfinance",
+            )
+        else:
+            quotes[t] = _cached_quote(t)
+
+    with _state_lock:
+        _tape_cache[key] = (now, quotes)
+    return quotes
 
 
 def market_summary() -> MarketSummary:

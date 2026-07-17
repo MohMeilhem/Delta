@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
-import { BrowserRouter, Link, Route, Routes, useLocation } from 'react-router-dom'
+import { BrowserRouter, Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { Moon, Sun, Translate } from '@phosphor-icons/react'
 import Landing from './pages/Landing'
 import Home from './pages/Home'
 import CompanyPage from './pages/CompanyPage'
+import Login from './pages/Login'
+import { AuthProvider, RequireAuth } from './auth'
 import { api } from './api'
 import type { TapeEntry } from './api'
 import { LangProvider, useLang } from './i18n'
@@ -16,10 +18,12 @@ export default function App() {
   return (
     <ThemeProvider>
       <LangProvider>
-        <BrowserRouter>
-          <TopBar />
-          <AnimatedRoutes />
-        </BrowserRouter>
+        <AuthProvider>
+          <BrowserRouter>
+            <TopBar />
+            <AnimatedRoutes />
+          </BrowserRouter>
+        </AuthProvider>
       </LangProvider>
     </ThemeProvider>
   )
@@ -39,8 +43,13 @@ function AnimatedRoutes() {
       >
         <Routes location={location}>
           <Route path="/" element={<Landing />} />
-          <Route path="/app" element={<Home />} />
-          <Route path="/company/:ticker" element={<CompanyPage />} />
+          <Route path="/login" element={<Login />} />
+          <Route element={<RequireAuth />}>
+            <Route path="/app" element={<Home />} />
+            <Route path="/company/:ticker" element={<CompanyPage />} />
+          </Route>
+          {/* unknown paths land on the landing page, never a blank screen */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </motion.div>
     </AnimatePresence>
@@ -98,7 +107,10 @@ function TickerTape() {
   const { name } = useLang()
 
   useEffect(() => {
-    api.tape().then(setTape).catch(() => setTape([]))
+    const poll = () => api.tape().then(setTape).catch(() => setTape((t) => t ?? []))
+    poll()
+    const id = setInterval(poll, 60_000)
+    return () => clearInterval(id)
   }, [])
 
   if (!tape?.length) return <div className="flex-1" />
@@ -107,6 +119,7 @@ function TickerTape() {
     <Link
       key={e.ticker}
       to={`/company/${e.ticker}`}
+      tabIndex={-1} // decorative aria-hidden tape: keep focus out of it
       className="group flex shrink-0 items-center gap-2 px-4 text-[11px]"
     >
       <span className="text-ink-muted transition-colors group-hover:text-ink">{name(e)}</span>

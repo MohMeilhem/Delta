@@ -14,6 +14,7 @@ from the seed data when ANTHROPIC_API_KEY is unset or the API fails.
 
 from __future__ import annotations
 
+import json
 import os
 from typing import Literal
 
@@ -354,18 +355,30 @@ Format:
 
 # Data room
 {block}"""
+    # Validated app-side with pydantic instead of messages.parse: this schema
+    # (nested nullable Assumptions) is complex enough that the API's grammar
+    # compiler times out on it ("Grammar compilation timed out", ~100s per
+    # attempt), which silently forced every chat onto the offline fallback.
+    schema = json.dumps(_LLMReply.model_json_schema(), ensure_ascii=False)
+    system += (
+        "\n\n# Output format\nReturn ONLY one JSON object matching this JSON Schema — "
+        f"no markdown fences, no prose outside the JSON:\n{schema}"
+    )
     messages = [{"role": m.role, "content": m.content} for m in req.messages]
     for attempt in range(2):  # initial attempt + one retry on invalid output
         try:
-            response = client.messages.parse(
+            response = client.messages.create(
                 model=CHAT_MODEL,
                 max_tokens=2500,
                 system=system,
                 messages=messages,
-                output_format=_LLMReply,
+                timeout=90.0,
             )
-            if response.parsed_output is not None:
-                return _finalize(c, req, response.parsed_output)
+            text = response.content[-1].text
+            # raw_decode: take the first complete JSON object, ignore any
+            # stray prose/fences the model appends after it
+            obj, _ = json.JSONDecoder().raw_decode(text[text.find("{"):])
+            return _finalize(c, req, _LLMReply.model_validate(obj))
         except Exception as exc:  # log, then fall back — the demo must not break
             print(f"[chat] attempt {attempt + 1} failed: {exc}")
             continue
@@ -404,7 +417,11 @@ def _finalize(c: Company, req: ChatRequest, llm: _LLMReply) -> ChatReply:
 # --------------------------------------------------------------------------
 
 _TOPIC_HINTS: dict[str, list[str]] = {
-    # "rate" first: "قيّم فرضياتي" must not fall into the valuation bucket
+    # "identity" first: "who are you" must not fall into a data bucket
+    "identity": ["من انت", "من أنت", "مين انت", "مين أنت", "عرف بنفسك", "عرّف بنفسك",
+                 "وش انت", "ما هذا", "من تكون", "who are you", "what are you",
+                 "introduce yourself", "who r u"],
+    # "rate" next: "قيّم فرضياتي" must not fall into the valuation bucket
     "rate": ["قيّم", "قيم فرض", "فرضيات", "مدخلات", "معايير", "rate my", "assumptions",
              "parameters", "نموذجي"],
     "margin": ["هامش", "ربحية", "تكاليف", "margin", "profitability", "cost"],
@@ -473,6 +490,25 @@ def _fallback_reply(c: Company, req: ChatRequest) -> ChatReply:
     yoy = n["yoy"]
     sukuk_share = (latest.sukuk_debt / latest.total_debt * 100) if latest.total_debt else 0.0
     flags = n["flags"]
+
+    if topic == "identity":
+        reply = (
+            f"أنا مساعد التحليل في منصة دلتا — أجيب عن أسئلتك حول {name} استناداً إلى بياناتها "
+            f"المالية ونموذج التقييم الذي تعدّله. اسألني عن الهوامش، النمو، الدين، الزكاة، "
+            f"التقييم، أو إشارات وكيل المراقبة."
+            if ar else
+            f"I'm the Delta platform's analyst assistant — I answer questions about {name} grounded "
+            f"in its financials and the valuation model you're adjusting. Ask me about margins, "
+            f"growth, debt, zakat, valuation, or the monitoring agent's flags."
+        )
+        follow_ups = (
+            ["ما وضع الشركة باختصار؟", "هل التقييم الحالي مبرر؟", "هل هناك إشارات غير اعتيادية؟"]
+            if ar else
+            ["Give me a quick read on the company", "Is the current valuation justified?",
+             "Any unusual signals?"]
+        )
+        return ChatReply(reply_ar=reply, key_numbers_ar=[], follow_ups_ar=follow_ups,
+                         source="fallback")
 
     if topic == "rate":
         ratings = _fallback_ratings(a, base, ar)

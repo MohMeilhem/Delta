@@ -10,6 +10,14 @@ import { expect, test, type Page } from '@playwright/test'
  * never parsed numerals — the UI renders Arabic-Indic digits).
  */
 
+// The app routes are behind the demo auth guard: seed a session before any
+// page script runs so direct navigation to /app and /company/* works.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('delta-user', JSON.stringify({ email: 'e2e@delta.sa' }))
+  })
+})
+
 /** The analyst fair-value readout card (label + animated number). */
 function analystCard(page: Page) {
   return page.getByText('القيمة العادلة، المحلل').locator('..')
