@@ -7,6 +7,7 @@ __pycache__/
 .pytest_cache/
 .env
 .claude/launch.json
+.claude/scheduled_tasks.lock
 attached_assets/
 .vercel/
 zipFile.zip
