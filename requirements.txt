@@ -1,9 +1,11 @@
 # Vercel serverless deps — sklearn intentionally omitted (valuation.py has a
 # closed-form numpy fallback) to stay under the 250 MB function size limit.
-# Local dev uses backend/requirements.txt instead.
+# yfinance powers the live ticker tape (one batched request, no daily cap —
+# unlike SAHMK's 60/day free tier). Local dev uses backend/requirements.txt.
 fastapi
 pydantic
 python-dotenv
 anthropic
 httpx
 numpy
+yfinance

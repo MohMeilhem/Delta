@@ -20,7 +20,6 @@ from __future__ import annotations
 import os
 import threading
 import time
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -277,24 +276,16 @@ def tape_quotes(tickers: list[str]) -> dict[str, LiveQuote]:
     if hit and now - hit[0] < TAPE_TTL_S:
         return hit[1]
 
-    offline = bool(os.environ.get("DELTA_OFFLINE"))
-
+    # yfinance batch (one HTTP call for all 33, no per-request daily cap) is the
+    # tape's live source on BOTH local and serverless. SAHMK is deliberately not
+    # used here: its free tier is 60 requests/day, and the tape alone would issue
+    # 33 per refresh — SAHMK stays reserved for the per-company live_quote badge.
     closes: dict[str, tuple[float, float]] = {}
-    if not offline:
+    if not os.environ.get("DELTA_OFFLINE"):
         try:
             closes = marketdata.fetch_last_closes(tickers)
         except Exception:
             closes = {}
-
-    # Tickers the yfinance batch didn't cover: try SAHMK concurrently (this is
-    # the production path, where yfinance is absent and closes is empty).
-    sahmk: dict[str, LiveQuote] = {}
-    missing = [t for t in tickers if t not in closes]
-    if not offline and missing and _sahmk_key():
-        with ThreadPoolExecutor(max_workers=8) as pool:
-            for t, q in zip(missing, pool.map(_sahmk_quote, missing)):
-                if q is not None:
-                    sahmk[t] = q
 
     quotes: dict[str, LiveQuote] = {}
     for t in tickers:
@@ -310,8 +301,6 @@ def tape_quotes(tickers: list[str]) -> dict[str, LiveQuote]:
                 currency="SAR",
                 source="yfinance",
             )
-        elif t in sahmk:
-            quotes[t] = sahmk[t]
         else:
             quotes[t] = _cached_quote(t)
 
