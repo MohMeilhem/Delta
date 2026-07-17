@@ -15,10 +15,13 @@ import {
   HeartStraight,
   Lightning,
   ChartBar,
+  ChartPieSlice,
+  Crosshair,
   Robot,
   Scales,
   Sparkle,
   TrendUp,
+  UsersThree,
   Warning,
 } from '@phosphor-icons/react'
 import {
@@ -81,6 +84,33 @@ const COPY = {
       ['وكيل المراقبة', 'وكيل المراقبة يستخدم Z-score عبر 8 أرباع متتالية ويظهر التنبيهات تلقائياً عند فتح الشركة.'],
       ['السيناريوهات التوليدية', 'تصدر بطاقات متفائلة ومتشددة وبطاقة "ما الذي يكسر الفرضية" بصيغة JSON مضبوطة فقط.'],
     ],
+    marketTitle: 'السوق المستهدف والعملاء',
+    marketSubtitle: 'حجم الفرصة في السوق السعودي، ومن يدفع مقابل دلتا فعلاً.',
+    marketSegmentsLabel: 'شرائح العملاء',
+    marketSegmentsQ: 'من يشتري دلتا؟',
+    marketSegmentRows: [
+      { name: 'مستثمرون أفراد', stat: '7.28M', statLabel: 'مستثمر', fact: '14.86M محفظة استثمارية — تنمو بأكثر من 500K سنوياً', plan: 'الخطة الفردية — 99 ر.س/شهر' },
+      { name: 'محللون ماليون', stat: '693', statLabel: 'حامل CFA', fact: 'إضافة إلى 2,720 مرشح CFA في السعودية', plan: 'خطة الفريق — 499 ر.س/شهر' },
+    ],
+    marketAlt: 'البديل الحالي: Bloomberg بنحو $20,000 سنوياً — إنجليزي فقط ولا يخدم الأفراد.',
+    marketTam: {
+      label: 'TAM',
+      title: 'إجمالي السوق المستهدف',
+      value: '120M',
+      unit: 'ريال / سنة',
+      approx: '≈ $32M — السوق السعودي',
+      bullets: ['7M مستثمر × 99 ر.س/شهر', '240 شركة × 499 ر.س/شهر (5 مقاعد)'],
+      foot: 'رؤية 2030 — مضاعفة حجم سوق رأس المال',
+    },
+    marketSom: {
+      label: 'SOM',
+      title: 'السوق القابل للاستحواذ',
+      value: '1.3M',
+      unit: 'ريال — السنة الأولى',
+      approx: '≈ $350K',
+      bullets: ['1,000 مستثمر × 99 ر.س/شهر', '20 شركة × 499 ر.س/شهر'],
+      foot: 'السنة الثالثة: 10M ريال ($2.7M)',
+    },
     pricingTitle: 'الاشتراك',
     pricingSubtitle: 'تسعير B2B بالريال السعودي. جرّب، ثم اختر ما يناسب فريقك.',
     monthly: 'شهري',
@@ -155,6 +185,33 @@ const COPY = {
       ['Monitoring agent', 'The monitoring agent uses Z-score anomaly detection across trailing 8 quarters and auto-flags when a company opens.'],
       ['Generative scenarios', 'Generative scenarios ship as bull, bear, and thesis-breaker cards in schema-validated JSON only.'],
     ],
+    marketTitle: 'Target market & customers',
+    marketSubtitle: 'The size of the Saudi opportunity, and who actually pays for Delta.',
+    marketSegmentsLabel: 'Customer segments',
+    marketSegmentsQ: 'Who buys Delta?',
+    marketSegmentRows: [
+      { name: 'Retail investors', stat: '7.28M', statLabel: 'investors', fact: '14.86M portfolios — growing by 500K+ a year', plan: 'Individual plan — SAR 99/mo' },
+      { name: 'Financial analysts', stat: '693', statLabel: 'CFA holders', fact: 'plus 2,720 CFA candidates in Saudi Arabia', plan: 'Team plan — SAR 499/mo' },
+    ],
+    marketAlt: 'Current alternative: Bloomberg at ~$20,000/year — English-only, and it does not serve individuals.',
+    marketTam: {
+      label: 'TAM',
+      title: 'Total addressable market',
+      value: '120M',
+      unit: 'SAR / year',
+      approx: '≈ $32M — the Saudi market',
+      bullets: ['7M investors × SAR 99/mo', '240 firms × SAR 499/mo (5 seats)'],
+      foot: 'Vision 2030 — doubling the capital market',
+    },
+    marketSom: {
+      label: 'SOM',
+      title: 'Serviceable obtainable market',
+      value: '1.3M',
+      unit: 'SAR — year one',
+      approx: '≈ $350K',
+      bullets: ['1,000 investors × SAR 99/mo', '20 firms × SAR 499/mo'],
+      foot: 'Year three: SAR 10M ($2.7M)',
+    },
     pricingTitle: 'Subscription',
     pricingSubtitle: 'B2B pricing in SAR. Start small, then scale with your team.',
     monthly: 'Monthly',
@@ -815,6 +872,120 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* ── Market opportunity ───────────────────────────────────────────── */}
+      <section className="relative z-10 mx-auto max-w-7xl px-6 py-20">
+        <motion.div
+          initial={reduce ? false : { opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.4 }}
+          transition={{ duration: 0.55, ease: [0.23, 1, 0.32, 1] }}
+          className="mb-10"
+        >
+          <div className="section-label">05</div>
+          <h2 className="display mt-2 text-2xl font-bold md:text-4xl">{copy.marketTitle}</h2>
+          <p className="mt-2 max-w-xl text-sm text-ink-muted">{copy.marketSubtitle}</p>
+        </motion.div>
+
+        <div className="grid gap-5 lg:grid-cols-3">
+          {/* Customer segments */}
+          <motion.div
+            initial={reduce ? false : { opacity: 0, y: 28 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.25 }}
+            transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
+            className="pricing-card"
+          >
+            <div className="flex items-center gap-2 text-xs font-semibold tracking-wide text-accent">
+              <UsersThree size={16} weight="duotone" />
+              {copy.marketSegmentsLabel}
+            </div>
+            <div className="display mt-2 text-xl font-bold">{copy.marketSegmentsQ}</div>
+            <div className="mt-5 space-y-4">
+              {copy.marketSegmentRows.map((r) => (
+                <div key={r.name} className="rounded-2xl border border-line/70 bg-surface-2/50 p-4">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <span className="text-sm font-semibold">{r.name}</span>
+                    <span className="flex items-baseline gap-1.5">
+                      <span className="num display text-2xl font-bold text-accent">{r.stat}</span>
+                      <span className="text-[11px] text-ink-faint">{r.statLabel}</span>
+                    </span>
+                  </div>
+                  <p className="mt-1.5 text-xs leading-6 text-ink-muted">{r.fact}</p>
+                  <div className="mt-2.5 inline-flex rounded-full border border-accent-dim px-2.5 py-1 text-[11px] text-accent">
+                    {r.plan}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="mt-4 text-[11px] leading-6 text-ink-faint">{copy.marketAlt}</p>
+          </motion.div>
+
+          {/* TAM */}
+          <motion.div
+            initial={reduce ? false : { opacity: 0, y: 28 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.25 }}
+            transition={{ duration: 0.6, delay: 0.1, ease: [0.23, 1, 0.32, 1] }}
+            className="pricing-card"
+          >
+            <div className="flex items-center gap-2 text-xs font-semibold tracking-wide text-accent">
+              <ChartPieSlice size={16} weight="duotone" />
+              {copy.marketTam.label}
+            </div>
+            <div className="mt-2 text-sm text-ink-muted">{copy.marketTam.title}</div>
+            <div className="mt-4 flex items-baseline gap-2">
+              <span className="num display text-5xl font-bold text-accent">{copy.marketTam.value}</span>
+              <span className="text-sm text-ink-muted">{copy.marketTam.unit}</span>
+            </div>
+            <div className="mt-1 text-xs text-ink-faint">{copy.marketTam.approx}</div>
+            <ul className="mt-5 space-y-2.5">
+              {copy.marketTam.bullets.map((b) => (
+                <li key={b} className="flex items-center gap-2.5 text-sm text-ink-muted">
+                  <Check size={14} weight="bold" className="shrink-0 text-accent" />
+                  <span>{b}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-5 h-px bg-gradient-to-r from-accent/30 to-transparent" />
+            <p className="mt-3 text-[11px] text-ink-faint">{copy.marketTam.foot}</p>
+          </motion.div>
+
+          {/* SOM — year-one slice; the year-three line is a projection, so it
+              wears the analyst amber, same semantic as the forecast line */}
+          <motion.div
+            initial={reduce ? false : { opacity: 0, y: 28 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.25 }}
+            transition={{ duration: 0.6, delay: 0.2, ease: [0.23, 1, 0.32, 1] }}
+            className="pricing-card"
+          >
+            <div className="flex items-center gap-2 text-xs font-semibold tracking-wide text-accent">
+              <Crosshair size={16} weight="duotone" />
+              {copy.marketSom.label}
+            </div>
+            <div className="mt-2 text-sm text-ink-muted">{copy.marketSom.title}</div>
+            <div className="mt-4 flex items-baseline gap-2">
+              <span className="num display text-5xl font-bold text-ink">{copy.marketSom.value}</span>
+              <span className="text-sm text-ink-muted">{copy.marketSom.unit}</span>
+            </div>
+            <div className="mt-1 text-xs text-ink-faint">{copy.marketSom.approx}</div>
+            <ul className="mt-5 space-y-2.5">
+              {copy.marketSom.bullets.map((b) => (
+                <li key={b} className="flex items-center gap-2.5 text-sm text-ink-muted">
+                  <Check size={14} weight="bold" className="shrink-0 text-accent" />
+                  <span>{b}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-5 h-px bg-gradient-to-r from-analyst/40 to-transparent" />
+            <div className="mt-3 flex items-center gap-2 text-xs font-semibold text-analyst">
+              <TrendUp size={14} weight="bold" />
+              <span>{copy.marketSom.foot}</span>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
       {/* ── Pricing ──────────────────────────────────────────────────────── */}
       <section id="subscribe" className="relative z-10 py-20">
         <div className="absolute inset-0 bg-gradient-to-b from-surface/0 via-surface/50 to-surface/0 border-y border-line/30" />
@@ -826,7 +997,7 @@ export default function Landing() {
             transition={{ duration: 0.55, ease: [0.23, 1, 0.32, 1] }}
             className="mb-8"
           >
-            <div className="section-label">05</div>
+            <div className="section-label">06</div>
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div>
                 <h2 className="display mt-2 text-2xl font-bold md:text-4xl">{copy.pricingTitle}</h2>
@@ -928,7 +1099,7 @@ export default function Landing() {
 
           <div className="relative grid gap-10 lg:grid-cols-2 lg:items-center">
             <div className="space-y-4">
-              <div className="section-label">06</div>
+              <div className="section-label">07</div>
               <h2 className="display text-2xl font-bold md:text-3xl">{copy.formTitle}</h2>
               <p className="text-sm leading-7 text-ink-muted">{copy.formHint}</p>
               <div className="mt-4 flex items-center gap-3 text-xs text-ink-faint">
