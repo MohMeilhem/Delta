@@ -56,6 +56,17 @@ html {
   background: var(--color-bg);
   color: var(--color-ink);
   color-scheme: dark;
+  scroll-behavior: smooth;
+}
+
+/* in-page anchors (e.g. "ابدأ الآن" -> early-access form) clear the 48px
+   sticky top bar instead of hiding under it */
+section[id] {
+  scroll-margin-top: 64px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
 }
 
 body {

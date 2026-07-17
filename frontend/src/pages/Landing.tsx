@@ -896,9 +896,9 @@ export default function Landing() {
                   </ul>
                   <div className="mt-6">
                     {tier.custom ? (
-                      <a href="#subscribe" className="pricing-btn-outline">{lang === 'ar' ? 'تواصل معنا' : 'Get in touch'}</a>
+                      <a href="#early-access" className="pricing-btn-outline">{lang === 'ar' ? 'تواصل معنا' : 'Get in touch'}</a>
                     ) : (
-                      <a href="#subscribe" className={`pricing-btn ${tier.highlighted ? 'pricing-btn-primary' : 'pricing-btn-outline'}`}>
+                      <a href="#early-access" className={`pricing-btn ${tier.highlighted ? 'pricing-btn-primary' : 'pricing-btn-outline'}`}>
                         {lang === 'ar' ? 'ابدأ الآن' : 'Get started'}
                       </a>
                     )}
@@ -912,7 +912,7 @@ export default function Landing() {
       </section>
 
       {/* ── Early access form ─────────────────────────────────────────────── */}
-      <section className="relative z-10 mx-auto max-w-7xl px-6 py-20">
+      <section id="early-access" className="relative z-10 mx-auto max-w-7xl px-6 py-20">
         <motion.div
           initial={reduce ? false : { opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
