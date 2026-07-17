@@ -228,6 +228,15 @@ def _cached_quote(ticker: str) -> LiveQuote:
 # Public API
 # --------------------------------------------------------------------------
 
+# SAHMK's free tier allows 60 requests/day, but the frontend polls every 5s —
+# unbudgeted, the quota dies within minutes of browsing. Ask SAHMK at most once
+# per ticker per this window; yfinance fills the polls in between, and the last
+# good SAHMK answer beats the static seed if yfinance is also down.
+SAHMK_BUDGET_TTL_S = 15 * 60
+_sahmk_attempt: dict[str, float] = {}   # last SAHMK attempt per ticker (monotonic)
+_sahmk_last: dict[str, LiveQuote] = {}  # last successful SAHMK quote per ticker
+
+
 def live_quote(ticker: str) -> LiveQuote:
     now = time.monotonic()
     with _state_lock:
@@ -236,15 +245,26 @@ def live_quote(ticker: str) -> LiveQuote:
         return hit[1]
 
     quote = None
-    try:
-        quote = _sahmk_quote(ticker)
-    except Exception:
-        quote = None
+    with _state_lock:
+        sahmk_due = now - _sahmk_attempt.get(ticker, float("-inf")) >= SAHMK_BUDGET_TTL_S
+    if sahmk_due and _sahmk_key():
+        with _state_lock:
+            _sahmk_attempt[ticker] = now  # counts failures too: no hammering a 429
+        try:
+            quote = _sahmk_quote(ticker)
+        except Exception:
+            quote = None
+        if quote is not None:
+            with _state_lock:
+                _sahmk_last[ticker] = quote
     if quote is None:
         try:
             quote = _yfinance_quote(ticker)
         except Exception:
             quote = None
+    if quote is None:
+        with _state_lock:
+            quote = _sahmk_last.get(ticker)  # stale licensed quote beats seed
     if quote is None:
         quote = _cached_quote(ticker)
 
